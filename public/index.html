@@ -1161,6 +1161,9 @@
     }
   }
 
+  /* ======================================
+   さらに小さい画面のデバイス用
+====================================== */
   @media (max-width: 370px) {
     .mainActionButton {
       min-height: 59px;
@@ -1177,7 +1180,11 @@
     .headerBadge {
       display: none;
     }
+
+   
   }
+  
+
 
 /* ======================================
    詳細設定：カード型デザイン完成版
@@ -1519,6 +1526,30 @@
   }
 }
 
+  
+/* ======================================
+   さらに小さい画面用
+   画面幅370px以下
+====================================== */
+@media (max-width: 370px) {
+
+  /* STOPボタン・パソコン・iPhoneのタイトル */
+  .settingsSectionTitle {
+    font-size: 15px;
+  }
+
+  /* 詳細設定カード内の説明文 */
+  .settingsActionDescription,
+  .settingsField .settingsDescription {
+    font-size: 12px;
+  }
+
+  /* STOPボタンを編集するボタンとプルダウン */
+  .settingsActionButton,
+  .settingsField select {
+    font-size: 13px;
+  }
+}
 
 </style>
 
