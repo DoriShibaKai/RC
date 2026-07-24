@@ -1006,61 +1006,80 @@
   border-radius: 10px;
 }
 
-   .mainActionIcon {
+   /* ======================================
+   iPhone用ボタン位置調整
+====================================== */
+
+/*
+  3ボタン全体の位置調整
+
+  数字を大きくすると右へ移動
+  数字を小さくする、またはマイナスにすると左へ移動
+*/
+.buttons {
+  --iphone-text-base-x: 0px;
+  --iphone-icon-base-x: 0px;
+}
+
+/* iPhoneのアイコン全体の基本位置 */
+.mainActionIcon {
   left: calc(50% - 53px);
   width: 25px;
   height: 25px;
 }
 
-    .mainActionIcon svg {
-      width: 22px;
-      height: 22px;
-    }
-    
-    #sendButton .mainActionIcon {
-  left: calc(50% - 55px);
+/* iPhoneのアイコンサイズ */
+.mainActionIcon svg {
+  width: 22px;
+  height: 22px;
 }
 
-    .mainActionTitle {
+/* iPhoneのボタン文字サイズ */
+.mainActionTitle {
   font-size: 12px;
   white-space: nowrap;
 }
 
-/* PCの「カメラを送信」ボタンの文字
-   数字大きいと右へずれる */
+/* iPhoneの「カメラを送信」ボタンの文字 */
 #sendButton .mainActionText {
-  transform: translateX(8px);
+  transform: translateX(
+    calc(var(--iphone-text-base-x) + 8px)
+  );
 }
 
-/* PCの「カメラを送信」ボタンのアイコン
-   数字大きいと右へずれる */
+/* iPhoneの「カメラを送信」ボタンのアイコン */
 #sendButton .mainActionIcon {
-  transform: translateX(10px);
+  transform: translateX(
+    calc(var(--iphone-icon-base-x) + 8px)
+  );
 }
 
- /* PCの「映像を受信」ボタンの文字
-   数字大きいと右へずれる */
+/* iPhoneの「映像を受信」ボタンの文字 */
 #viewButton .mainActionText {
-  transform: translateX(11px);
+  transform: translateX(
+    calc(var(--iphone-text-base-x) + 11px)
+  );
 }
 
-
-/* PCの「映像を受信」ボタンのアイコン
-   数字大きいと右へずれる */
+/* iPhoneの「映像を受信」ボタンのアイコン */
 #viewButton .mainActionIcon {
-  transform: translateX(8px);
+  transform: translateX(
+    calc(var(--iphone-icon-base-x) + 8px)
+  );
 }
 
-/* PCの「接続を終了」ボタンの文字
-   数字大きいと右へずれる */
-#stopButton .mainActionText{
-  transform: translateX(9px);
+/* iPhoneの「接続を終了」ボタンの文字 */
+#stopButton .mainActionText {
+  transform: translateX(
+    calc(var(--iphone-text-base-x) + 9px)
+  );
 }
-    
-/* PCの「接続を終了」ボタンのアイコン
-   数字大きいと右へずれる */
+
+/* iPhoneの「接続を終了」ボタンのアイコン */
 #stopButton .mainActionIcon {
-  transform: translateX(9px);
+  transform: translateX(
+    calc(var(--iphone-icon-base-x) + 9px)
+  );
 }
     
     .mainActionDescription {
