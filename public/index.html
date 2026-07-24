@@ -319,12 +319,52 @@
 
  .mainActionIcon {
   position: absolute;
-  left: calc(50% - 65px);
+  left: calc(50% - 105px);
 
   display: grid;
   width: 34px;
   height: 34px;
   place-items: center;
+}
+
+/* ======================================
+   PC用ボタン位置微調整
+====================================== */
+
+/* PCの「カメラを送信」ボタンの文字
+   数字大きいと右へずれる */
+#sendButton .mainActionText {
+  transform: translateX(8px);
+}
+
+/* PCの「カメラを送信」ボタンのアイコン
+   数字大きいと右へずれる */
+#sendButton .mainActionIcon {
+  transform: translateX(25px);
+}
+
+/* PCの「映像を受信」ボタンの文字
+   数字大きいと右へずれる */
+#viewButton .mainActionText {
+  transform: translateX(11px);
+}
+
+/* PCの「映像を受信」ボタンのアイコン
+   数字大きいと右へずれる */
+#viewButton .mainActionIcon {
+  transform: translateX(30px);
+}
+
+/* PCの「接続を終了」ボタンの文字
+   数字大きいと右へずれる */
+#stopButton .mainActionText {
+  transform: translateX(9px);
+}
+
+/* PCの「接続を終了」ボタンのアイコン
+   数字大きいと右へずれる */
+#stopButton .mainActionIcon {
+  transform: translateX(29px);
 }
 
   .mainActionIcon svg {
@@ -350,7 +390,7 @@
 }
 
 .mainActionTitle {
-  font-size: 15px;
+  font-size: 20px;
   font-weight: bold;
   line-height: 1.25;
   white-space: nowrap;
@@ -986,20 +1026,39 @@
   white-space: nowrap;
 }
 
+/* PCの「カメラを送信」ボタンの文字
+   数字大きいと右へずれる */
 #sendButton .mainActionText {
   transform: translateX(8px);
 }
 
+/* PCの「カメラを送信」ボタンのアイコン
+   数字大きいと右へずれる */
 #sendButton .mainActionIcon {
-  transform: translateX(8px);
+  transform: translateX(10px);
 }
 
-#viewButton .mainActionText,
-#viewButton .mainActionIcon {
+ /* PCの「映像を受信」ボタンの文字
+   数字大きいと右へずれる */
+#viewButton .mainActionText {
   transform: translateX(11px);
 }
 
-#stopButton .mainActionText,
+
+/* PCの「映像を受信」ボタンのアイコン
+   数字大きいと右へずれる */
+#viewButton .mainActionIcon {
+  transform: translateX(8px);
+}
+
+/* PCの「接続を終了」ボタンの文字
+   数字大きいと右へずれる */
+#stopButton .mainActionText{
+  transform: translateX(9px);
+}
+    
+/* PCの「接続を終了」ボタンのアイコン
+   数字大きいと右へずれる */
 #stopButton .mainActionIcon {
   transform: translateX(9px);
 }
