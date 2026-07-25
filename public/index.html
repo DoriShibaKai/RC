@@ -2087,7 +2087,7 @@ body.mobilePseudoFullscreenActive {
         </section>
 
 
-        <!-- iPhone設定 -->
+       <!-- スマートフォン・タブレット設定 -->
 
         <section
           class="
@@ -2097,7 +2097,7 @@ body.mobilePseudoFullscreenActive {
         >
 
           <div class="settingsSectionTitle">
-            iPhone
+            スマートフォン・タブレット
           </div>
 
           <label
@@ -5475,46 +5475,45 @@ window.addEventListener(
   "keydown",
   event => {
 
-    // キーを押し続けたときの連続実行を防ぐ
+    const selectedStopKey =
+      pcStopKey.value;
+
+    // 「使用しない」の場合
+    if (selectedStopKey === "None") {
+      return;
+    }
+
+    // 選択したキー以外では何もしない
+    if (event.code !== selectedStopKey) {
+      return;
+    }
+
+    // キー長押しによる連続実行を防ぐ
     if (event.repeat) {
       return;
     }
 
-    // プルダウンで「使用しない」が選ばれている
-    if (pcStopKey.value === "None") {
-      return;
-    }
-
-    // 選択されているキー以外は反応しない
-    if (event.code !== pcStopKey.value) {
-      return;
-    }
-
-    // 文字入力欄やプルダウン操作中は反応させない
-    const activeElement =
-      document.activeElement;
+    // 入力欄やプルダウンの操作中は反応させない
+    const target = event.target;
 
     if (
-      activeElement instanceof HTMLInputElement ||
-      activeElement instanceof HTMLSelectElement ||
-      activeElement instanceof HTMLTextAreaElement
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLTextAreaElement
     ) {
       return;
     }
 
-    // 接続前など，STOPボタンが無効なときは操作しない
+    // STOPボタンが使用できない状態
     if (driveStopButton.disabled) {
       return;
     }
 
-    // ブラウザ本来のSpaceスクロールなどを防ぐ
     event.preventDefault();
 
-    // 画面上のSTOPボタンと同じ処理を実行
-    toggleDriveStop(event);
+      toggleDriveStop(event);
   }
 );
-
 
 
 // ----------
@@ -5523,7 +5522,7 @@ window.addEventListener(
 
 loadSettings();
 loadStopButtonGeometry();
-    
+
   </script>
 </body>
 </html>
