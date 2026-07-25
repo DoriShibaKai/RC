@@ -3671,8 +3671,21 @@ videoWrapper.addEventListener(
     finishJoystickPointer(event, true);
   }
 );
+
+/*
+  iPhoneで3秒長押ししたときに，
+  画像保存などのメニューが出るのを防ぐ
+*/
+
+videoWrapper.addEventListener(
+  "contextmenu",
+  event => {
+    event.preventDefault();
+  }
+);
     
 sendButton.addEventListener("click", startSender);
+    
 viewButton.addEventListener("click", startViewer);
 
 function toggleDriveStop(event) {
@@ -4293,12 +4306,20 @@ function refreshMobileFullscreenAfterRotation() {
       }
 
 
-      /*
-        三回タップの途中状態をリセットする
-      */
+     /*
+  長押し判定の途中状態をリセットする
+*/
 
-      mobileFullscreenTapCount = 0;
-      mobileFullscreenLastTapTime = 0;
+if (mobileFullscreenHoldTimer) {
+
+  clearTimeout(
+    mobileFullscreenHoldTimer
+  );
+
+  mobileFullscreenHoldTimer = null;
+}
+
+mobileFullscreenHoldTriggered = false;
 
 
       /*
