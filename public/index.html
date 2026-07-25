@@ -700,7 +700,20 @@
     
     touch-action: none;
     -webkit-touch-callout: none;
+    -webkit-user-select: none;
     user-select: none;
+  }
+
+  /* iPhone/Safariの長押しによる文字・画面選択を防ぐ */
+  #videoWrapper,
+  #videoWrapper * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #videoWrapper video {
+    -webkit-user-drag: none;
   }
 
   video {
@@ -854,7 +867,7 @@ body.mobilePseudoFullscreenActive {
     bottom: 10px;
   }
 
-  /* 右下を3回タップしたときだけ表示 */
+  /* 右下を3秒長押ししたときだけ表示 */
   #pcFullscreenButton.mobileFullscreenVisible {
     display: flex;
   }
@@ -2955,12 +2968,10 @@ videoWrapper.addEventListener(
       return;
     }
 
-
     /*
       STOPボタンや全画面ボタンを押した場合は，
       ジョイスティックを作動させない
     */
-
     if (
       event.target.closest(
         "#driveStopButton, #pcFullscreenButton"
@@ -2969,15 +2980,21 @@ videoWrapper.addEventListener(
       return;
     }
 
-
-    /*
-      すでに別の指を追跡している場合は無視する
-    */
-
+    /* すでに別の指を追跡している場合は無視する */
     if (joystickPointerId !== null) {
       return;
     }
 
+    /*
+      iPhone/Safariの長押しによる選択・画像メニューを
+      映像枠内だけで防ぐ
+    */
+    if (
+      event.pointerType === "touch" ||
+      event.pointerType === "pen"
+    ) {
+      event.preventDefault();
+    }
 
     const rect =
       videoWrapper.getBoundingClientRect();
@@ -2988,26 +3005,18 @@ videoWrapper.addEventListener(
     const pointerY =
       event.clientY - rect.top;
 
-
     /*
-      全画面アイコン用の
-      右下120px四方かを判定する
+      長押しで全画面アイコンを出せるのは右下120px四方だけ。
+      ただし，この区域も通常のジョイスティック操作は有効。
     */
-
     const insideFullscreenHoldZone =
       isMobileFullscreenLayout() &&
       pointerX >=
-        rect.width -
-        MOBILE_FULLSCREEN_ZONE_SIZE_PX &&
+        rect.width - MOBILE_FULLSCREEN_ZONE_SIZE_PX &&
       pointerY >=
-        rect.height -
-        MOBILE_FULLSCREEN_ZONE_SIZE_PX;
+        rect.height - MOBILE_FULLSCREEN_ZONE_SIZE_PX;
 
-
-    /*
-      ジョイスティックの中心位置を決める
-    */
-
+    /* ジョイスティックの中心位置を映像枠内に収める */
     joystickCenterX = Math.max(
       joystickRadius,
       Math.min(
@@ -3024,121 +3033,78 @@ videoWrapper.addEventListener(
       )
     );
 
-
     joystickPointerId = event.pointerId;
-
     joystickPointerStartX = event.clientX;
     joystickPointerStartY = event.clientY;
 
     joystickCandidate = true;
     joystickActive = false;
-
     mobileFullscreenHoldTriggered = false;
-
 
     joystickKnob.style.left = "50%";
     joystickKnob.style.top = "50%";
-
     xyDisplay.textContent = "X：0.00　Y：0.00";
 
-
     /*
-      右下では，指を置いただけでは
-      ジョイスティックを表示しない
+      右下を含む映像枠内の全域で，
+      指を置いた瞬間に同じタイミングで表示する
     */
+    joystickArea.style.left =
+      joystickCenterX + "px";
 
-    if (insideFullscreenHoldZone) {
+    joystickArea.style.top =
+      joystickCenterY + "px";
 
-      joystickArea.style.display = "none";
+    joystickArea.style.display = "block";
 
-
-      /*
-        以前の長押しタイマーを停止する
-      */
-
-      if (mobileFullscreenHoldTimer) {
-
-        clearTimeout(
-          mobileFullscreenHoldTimer
-        );
-
-        mobileFullscreenHoldTimer = null;
-      }
-
-
-      /*
-        動かさず3秒押し続けた場合だけ，
-        全画面アイコンを表示する
-      */
-
-      mobileFullscreenHoldTimer =
-        setTimeout(
-          () => {
-
-            mobileFullscreenHoldTimer = null;
-
-
-            /*
-              同じ指がまだ押されていて，
-              操縦が始まっていない場合だけ実行する
-            */
-
-            if (
-              joystickPointerId !==
-                event.pointerId ||
-              !joystickCandidate ||
-              joystickActive
-            ) {
-              return;
-            }
-
-
-            mobileFullscreenHoldTriggered = true;
-
-            joystickArea.style.display = "none";
-
-            joystickKnob.style.left = "50%";
-            joystickKnob.style.top = "50%";
-
-            xyDisplay.textContent =
-              "X：0.00　Y：0.00";
-
-            showMobileFullscreenButton();
-
-          },
-          MOBILE_FULLSCREEN_HOLD_MS
-        );
-
-    } else {
-
-      /*
-        右下以外では，
-        ジョイスティック候補を表示する
-      */
-
-      joystickArea.style.left =
-        joystickCenterX + "px";
-
-      joystickArea.style.top =
-        joystickCenterY + "px";
-
-      joystickArea.style.display = "block";
+    /* 以前の長押しタイマーを確実に停止する */
+    if (mobileFullscreenHoldTimer) {
+      clearTimeout(mobileFullscreenHoldTimer);
+      mobileFullscreenHoldTimer = null;
     }
 
+    /*
+      右下で始めた場合だけ，3秒静止の判定を開始する。
+      動いた場合はpointermove側でこのタイマーを中止する。
+    */
+    if (insideFullscreenHoldZone) {
+      const holdPointerId = event.pointerId;
+
+      mobileFullscreenHoldTimer = setTimeout(
+        () => {
+          mobileFullscreenHoldTimer = null;
+
+          if (
+            joystickPointerId !== holdPointerId ||
+            !joystickCandidate ||
+            joystickActive
+          ) {
+            return;
+          }
+
+          mobileFullscreenHoldTriggered = true;
+
+          /* 長押し成立時だけジョイスティックから切り替える */
+          joystickArea.style.display = "none";
+          joystickKnob.style.left = "50%";
+          joystickKnob.style.top = "50%";
+          xyDisplay.textContent = "X：0.00　Y：0.00";
+
+          showMobileFullscreenButton();
+        },
+        MOBILE_FULLSCREEN_HOLD_MS
+      );
+    }
 
     /*
       指が映像領域から少し外れても，
       pointermove・pointerupを受け取れるようにする
     */
-
     try {
-
       videoWrapper.setPointerCapture(
         event.pointerId
       );
-
     } catch (error) {
-
       console.log(
         "Pointer Captureを設定できませんでした。",
         error
@@ -3673,12 +3639,61 @@ videoWrapper.addEventListener(
 );
 
 /*
+  iPhone/Safariで長押し中にページ選択へ渡さない。
+  映像枠内だけに限定し，ボタン上では実行しない。
+*/
+videoWrapper.addEventListener(
+  "touchstart",
+  event => {
+    if (
+      !event.target.closest(
+        "#driveStopButton, #pcFullscreenButton"
+      )
+    ) {
+      event.preventDefault();
+    }
+  },
+  { passive: false }
+);
+
+videoWrapper.addEventListener(
+  "touchmove",
+  event => {
+    if (
+      !event.target.closest(
+        "#driveStopButton, #pcFullscreenButton"
+      )
+    ) {
+      event.preventDefault();
+    }
+  },
+  { passive: false }
+);
+
+/*
   iPhoneで3秒長押ししたときに，
   画像保存などのメニューが出るのを防ぐ
 */
 
 videoWrapper.addEventListener(
   "contextmenu",
+  event => {
+    event.preventDefault();
+  }
+);
+
+/*
+  Safariの長押しによる範囲選択・ドラッグ開始を防ぐ
+*/
+videoWrapper.addEventListener(
+  "selectstart",
+  event => {
+    event.preventDefault();
+  }
+);
+
+videoWrapper.addEventListener(
+  "dragstart",
   event => {
     event.preventDefault();
   }
