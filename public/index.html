@@ -7,8 +7,7 @@
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   >
   <title>WebRTCカメラ</title>
-
-    
+   
 <style>
   * {
     box-sizing: border-box;
@@ -1617,10 +1616,24 @@ body.mobilePseudoFullscreenActive {
     font-size: 13px;
   }
 
-.settingsField select,
-.themeToggleControl {
+.settingsField select {
   grid-column: 1 / 3;
   grid-row: 3;
+
+  min-height: 40px;
+  margin-top: 7px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+.themeToggleControl {
+  grid-column: 2;
+  grid-row: 1 / 3;
+
+  justify-self: end;
+  align-self: center;
+  margin-top: 0;
+}
 
   min-height: 40px;
   margin-top: 7px;
@@ -2093,7 +2106,7 @@ body.mobilePseudoFullscreenActive {
           </div>
 
           <span class="settingsDescription">
-            ダークモードとホワイトモードを切り替えます
+            背景色切り替え
           </span>
 
           <!--
@@ -4285,18 +4298,27 @@ driveStopButton.addEventListener(
     const wrapperRect =
       videoWrapper.getBoundingClientRect();
 
-    const buttonRect =
-      driveStopButton.getBoundingClientRect();
+    const wrapperRect =
+  videoWrapper.getBoundingClientRect();
 
-    stopEditStartLeft =
-      buttonRect.left - wrapperRect.left;
+const buttonRect =
+  driveStopButton.getBoundingClientRect();
 
-    stopEditStartTop =
-      buttonRect.top - wrapperRect.top;
+stopEditStartLeft =
+  buttonRect.left - wrapperRect.left;
 
-    driveStopButton.setPointerCapture(
-      event.pointerId
-    );
+stopEditStartTop =
+  buttonRect.top - wrapperRect.top;
+
+stopEditStartWidth =
+  buttonRect.width;
+
+stopEditStartHeight =
+  buttonRect.height;
+
+stopResizeHandle.setPointerCapture(
+  event.pointerId
+);
   }
 );
 
@@ -4424,24 +4446,22 @@ applyStopButtonGeometry();
     */
     if (stopEditAction === "resize") {
 
-      const buttonRect =
-        driveStopButton.getBoundingClientRect();
+     /*
+  サイズ変更中は，開始時の左上位置を固定する
+*/
+const buttonLeft =
+  stopEditStartLeft;
 
-      const buttonLeft =
-        buttonRect.left -
-        wrapperRect.left;
+const buttonTop =
+  stopEditStartTop;
 
-      const buttonTop =
-        buttonRect.top -
-        wrapperRect.top;
+const maximumWidth =
+  wrapperRect.width -
+  buttonLeft;
 
-      const maximumWidth =
-        wrapperRect.width -
-        buttonLeft;
-
-      const maximumHeight =
-        wrapperRect.height -
-        buttonTop;
+const maximumHeight =
+  wrapperRect.height -
+  buttonTop;
 
       const minimumWidth =
         Math.min(
