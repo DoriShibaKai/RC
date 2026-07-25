@@ -2220,9 +2220,12 @@ if (settingsPanel.open) {
     driveChannel.readyState
   );
 
-  driveChannel.onopen = () => {
+  const initializePcDriveChannel = () => {
   console.log("受け手側 DataChannel 接続");
-  console.log("受け手側の状態", driveChannel.readyState);
+  console.log(
+    "受け手側の状態",
+    driveChannel.readyState
+  );
 
   driveStopButton.disabled = false;
 
@@ -2233,10 +2236,16 @@ if (settingsPanel.open) {
     "操縦接続が完了しました。\n" +
     "停止位置から開始します。";
 
-    if (settingsPanel.open) {
-  stopDrivingForSettings();
-}
+  if (settingsPanel.open) {
+    stopDrivingForSettings();
+  }
 };
+
+if (driveChannel.readyState === "open") {
+  initializePcDriveChannel();
+} else {
+  driveChannel.onopen = initializePcDriveChannel;
+}
 
   driveChannel.onclosing = () => {
     console.log("PC側 DataChannel closing");
