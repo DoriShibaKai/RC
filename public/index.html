@@ -2282,10 +2282,38 @@ const iphoneStopGesture =
   document.getElementById("iphoneStopGesture");
 
     let joystickCenterX = 0;
-    let joystickCenterY = 0;
-    let joystickActive = false;
-    let driveStopped = false;
-    let driveSequence = 0;
+let joystickCenterY = 0;
+
+/*
+  joystickActive:
+  指が実際に動き，操縦が開始された状態
+*/
+let joystickActive = false;
+
+/*
+  joystickCandidate:
+  指は置かれたが，まだ動いていない候補状態
+*/
+let joystickCandidate = false;
+
+/*
+  現在追跡している指
+*/
+let joystickPointerId = null;
+
+/*
+  指を置いた最初の座標
+*/
+let joystickPointerStartX = 0;
+let joystickPointerStartY = 0;
+
+/*
+  誤差程度の動きでは操縦を開始しない
+*/
+const JOYSTICK_START_DISTANCE_PX = 12;
+
+let driveStopped = false;
+let driveSequence = 0;
 
     let stopEditorActive = false;
 let remoteSettingsActive = false;
@@ -2890,7 +2918,10 @@ function disconnectBoth() {
       videoElement.classList.add("hidden");
       videoElement.muted = true;
 
-      joystickActive = false;
+     joystickActive = false;
+joystickCandidate = false;
+joystickPointerId = null;
+
 driveStopped = false;
 
 driveStopButtonText.textContent = "STOP";
@@ -2908,40 +2939,120 @@ joystickArea.style.display = "none";
       }
     }
 
-   videoWrapper.addEventListener("pointerdown", event => {
-  if (
-    role !== "viewer" ||
-    driveStopped ||
-    settingsPanel.open ||
-    stopEditorActive
-  ) {
-    return;
-  }
+   videoWrapper.addEventListener(
+  "pointerdown",
+  event => {
 
-  const rect = videoWrapper.getBoundingClientRect();
+    if (
+      role !== "viewer" ||
+      driveStopped ||
+      settingsPanel.open ||
+      stopEditorActive
+    ) {
+      return;
+    }
+
+
+    /*
+      STOPボタンや全画面ボタンを押した場合は，
+      ジョイスティック候補を作らない
+    */
+
+    if (
+      event.target.closest(
+        "#driveStopButton, #pcFullscreenButton"
+      )
+    ) {
+      return;
+    }
+
+
+    /*
+      すでに別の指を追跡している場合は無視する
+    */
+
+    if (joystickPointerId !== null) {
+      return;
+    }
+
+
+    const rect =
+      videoWrapper.getBoundingClientRect();
+
+    const pointerX =
+      event.clientX - rect.left;
+
+    const pointerY =
+      event.clientY - rect.top;
+
+
+    /*
+      ジョイスティックの中心が
+      映像領域からはみ出さないようにする
+    */
 
     joystickCenterX = Math.max(
-    joystickRadius,
-    Math.min(rect.width - joystickRadius, event.clientX - rect.left)
-  );
+      joystickRadius,
+      Math.min(
+        rect.width - joystickRadius,
+        pointerX
+      )
+    );
 
-  joystickCenterY = Math.max(
-    joystickRadius,
-    Math.min(rect.height - joystickRadius, event.clientY - rect.top)
-  );
+    joystickCenterY = Math.max(
+      joystickRadius,
+      Math.min(
+        rect.height - joystickRadius,
+        pointerY
+      )
+    );
 
-  joystickArea.style.left = joystickCenterX + "px";
-  joystickArea.style.top = joystickCenterY + "px";
-  joystickArea.style.display = "block";
 
-  joystickKnob.style.left = "50%";
-  joystickKnob.style.top = "50%";
-  
+    /*
+      候補のジョイスティックを表示する
+      この段階ではまだ操縦命令を送らない
+    */
 
-  joystickActive = true;
+    joystickArea.style.left =
+      joystickCenterX + "px";
 
-  xyDisplay.textContent = "X：0.00　Y：0.00";
-});
+    joystickArea.style.top =
+      joystickCenterY + "px";
+
+    joystickArea.style.display = "block";
+
+    joystickKnob.style.left = "50%";
+    joystickKnob.style.top = "50%";
+
+
+    joystickCandidate = true;
+    joystickActive = false;
+
+    joystickPointerId = event.pointerId;
+
+    joystickPointerStartX = event.clientX;
+    joystickPointerStartY = event.clientY;
+
+    xyDisplay.textContent = "X：0.00　Y：0.00";
+
+
+    /*
+      指が映像領域の外へ少し出ても
+      pointermove・pointerupを受け取れるようにする
+    */
+
+    try {
+      videoWrapper.setPointerCapture(
+        event.pointerId
+      );
+    } catch (error) {
+      console.log(
+        "Pointer Captureを設定できませんでした。",
+        error
+      );
+    }
+  }
+);
 
 
     function sendStopCommand() {
@@ -3192,66 +3303,348 @@ if (command.type === "drive-stop-state") {
   }
 }
 
-   videoWrapper.addEventListener("pointermove", event => {
+   videoWrapper.addEventListener(
+  "pointermove",
+  event => {
+
+    if (
+      role !== "viewer" ||
+      !joystickCandidate ||
+      joystickPointerId !== event.pointerId ||
+      driveStopped ||
+      settingsPanel.open ||
+      stopEditorActive
+    ) {
+      return;
+    }
+
+
+    /*
+      指を置いた位置からどれだけ動いたかを調べる
+    */
+
+    const movementFromStart =
+      Math.hypot(
+        event.clientX - joystickPointerStartX,
+        event.clientY - joystickPointerStartY
+      );
+
+
+    /*
+      12px未満の小さな揺れは，
+      タップ中の誤差として扱う
+    */
+
+    if (
+      !joystickActive &&
+      movementFromStart <
+        JOYSTICK_START_DISTANCE_PX
+    ) {
+      return;
+    }
+
+
+    /*
+      しきい値以上動いた時点で，
+      初めてジョイスティック操作として確定する
+    */
+
+    if (!joystickActive) {
+
+      joystickActive = true;
+
+      /*
+        操縦が始まったため，
+        三回タップの途中状態を取り消す
+      */
+
+      mobileFullscreenTapCount = 0;
+      mobileFullscreenLastTapTime = 0;
+    }
+
+
+    event.preventDefault();
+
+
+    const rect =
+      videoWrapper.getBoundingClientRect();
+
+    const pointerX =
+      event.clientX - rect.left;
+
+    const pointerY =
+      event.clientY - rect.top;
+
+    let dx =
+      pointerX - joystickCenterX;
+
+    let dy =
+      pointerY - joystickCenterY;
+
+    const distance =
+      Math.hypot(dx, dy);
+
+
+    /*
+      ノブが外周を越えないようにする
+    */
+
+    if (distance > maxKnobDistance) {
+
+      dx =
+        dx / distance *
+        maxKnobDistance;
+
+      dy =
+        dy / distance *
+        maxKnobDistance;
+    }
+
+
+    joystickKnob.style.left =
+      (joystickRadius + dx) + "px";
+
+    joystickKnob.style.top =
+      (joystickRadius + dy) + "px";
+
+
+    const x =
+      dx / maxKnobDistance;
+
+    const y =
+      -dy / maxKnobDistance;
+
+
+    xyDisplay.textContent =
+      "X：" + x.toFixed(2) +
+      "　Y：" + y.toFixed(2);
+
+
+    if (
+      driveChannel &&
+      driveChannel.readyState === "open"
+    ) {
+
+      driveSequence++;
+
+      const driveData = {
+        type: "drive",
+        x: Number(x.toFixed(2)),
+        y: Number(y.toFixed(2)),
+        sequence: driveSequence
+      };
+
+      driveChannel.send(
+        JSON.stringify(driveData)
+      );
+    }
+  }
+);
+
+/*
+  動かさずに離したタップを，
+  全画面アイコン用のタップとして数える
+*/
+
+function registerMobileFullscreenTap(
+  clientX,
+  clientY
+) {
+
+  if (!isMobileFullscreenLayout()) {
+    return;
+  }
+
+
+  const rect =
+    videoWrapper.getBoundingClientRect();
+
+  const pointerX =
+    clientX - rect.left;
+
+  const pointerY =
+    clientY - rect.top;
+
+
+  /*
+    映像の右下120px四方だけを
+    全画面用の三回タップ領域にする
+  */
+
+  const insideBottomRight =
+    pointerX >=
+      rect.width -
+      MOBILE_FULLSCREEN_ZONE_SIZE_PX &&
+    pointerY >=
+      rect.height -
+      MOBILE_FULLSCREEN_ZONE_SIZE_PX;
+
+
+  if (!insideBottomRight) {
+
+    mobileFullscreenTapCount = 0;
+    mobileFullscreenLastTapTime = 0;
+
+    return;
+  }
+
+
+  const now = performance.now();
+
+  const timeFromLastTap =
+    now - mobileFullscreenLastTapTime;
+
+  const distanceFromLastTap =
+    Math.hypot(
+      clientX - mobileFullscreenLastTapX,
+      clientY - mobileFullscreenLastTapY
+    );
+
+
+  const sameTapSeries =
+    timeFromLastTap <=
+      MOBILE_FULLSCREEN_TAP_LIMIT_MS &&
+    distanceFromLastTap <=
+      MOBILE_FULLSCREEN_SAME_PLACE_PX;
+
+
+  if (sameTapSeries) {
+    mobileFullscreenTapCount += 1;
+  } else {
+    mobileFullscreenTapCount = 1;
+  }
+
+
+  mobileFullscreenLastTapTime = now;
+  mobileFullscreenLastTapX = clientX;
+  mobileFullscreenLastTapY = clientY;
+
+
+  /*
+    三回タップされたら，
+    ジョイスティックを消して
+    全画面アイコンを表示する
+  */
+
+  if (mobileFullscreenTapCount >= 3) {
+
+    mobileFullscreenTapCount = 0;
+    mobileFullscreenLastTapTime = 0;
+
+    joystickCandidate = false;
+    joystickActive = false;
+
+    joystickArea.style.display = "none";
+
+    joystickKnob.style.left = "50%";
+    joystickKnob.style.top = "50%";
+
+    xyDisplay.textContent =
+      "X：0.00　Y：0.00";
+
+    showMobileFullscreenButton();
+  }
+}
+
+
+/*
+  ジョイスティック操作または候補状態を終了する
+*/
+
+function finishJoystickPointer(
+  event,
+  wasCancelled = false
+) {
+
   if (
-    role !== "viewer" ||
-    !joystickActive ||
-    driveStopped ||
-    settingsPanel.open ||
-    stopEditorActive
+    joystickPointerId !== event.pointerId
   ) {
     return;
   }
 
-  // 以下ジョイスティック移動処理
 
-  const rect = videoWrapper.getBoundingClientRect();
+  const wasDriving = joystickActive;
 
-  const pointerX = event.clientX - rect.left;
-  const pointerY = event.clientY - rect.top;
+  const wasOnlyTap =
+    joystickCandidate &&
+    !joystickActive &&
+    !wasCancelled;
 
-  let dx = pointerX - joystickCenterX;
-  let dy = pointerY - joystickCenterY;
 
-  const distance = Math.sqrt(dx * dx + dy * dy);
+  /*
+    操縦していた場合は，
+    指を離した瞬間に停止命令を送る
+  */
 
-  if (distance > maxKnobDistance) {
-    dx = dx / distance * maxKnobDistance;
-    dy = dy / distance * maxKnobDistance;
+  if (wasDriving) {
+    sendStopCommand();
   }
 
-  joystickKnob.style.left =
-    (joystickRadius + dx) + "px";
 
-  joystickKnob.style.top =
-    (joystickRadius + dy) + "px";
+  joystickCandidate = false;
+  joystickActive = false;
+  joystickPointerId = null;
 
-    
+  joystickArea.style.display = "none";
 
-  const x = dx / maxKnobDistance;
-  const y = -dy / maxKnobDistance;
+  joystickKnob.style.left = "50%";
+  joystickKnob.style.top = "50%";
 
   xyDisplay.textContent =
-    "X：" + x.toFixed(2) +
-    "　Y：" + y.toFixed(2);
+    "X：0.00　Y：0.00";
 
-  if (driveChannel &&
-      driveChannel.readyState === "open") {
 
-    driveSequence++;
+  try {
 
-    const driveData = {
-      type: "drive",
-      x: Number(x.toFixed(2)),
-      y: Number(y.toFixed(2)),
-      sequence: driveSequence
-    };
+    if (
+      videoWrapper.hasPointerCapture(
+        event.pointerId
+      )
+    ) {
+      videoWrapper.releasePointerCapture(
+        event.pointerId
+      );
+    }
 
-    driveChannel.send(JSON.stringify(driveData));
+  } catch (error) {
+
+    console.log(
+      "Pointer Captureを解除できませんでした。",
+      error
+    );
   }
-});
 
 
+  /*
+    動かさず離した場合だけ，
+    三回タップ判定へ渡す
+  */
+
+  if (wasOnlyTap) {
+
+    registerMobileFullscreenTap(
+      event.clientX,
+      event.clientY
+    );
+  }
+}
+
+
+videoWrapper.addEventListener(
+  "pointerup",
+  event => {
+    finishJoystickPointer(event, false);
+  }
+);
+
+
+videoWrapper.addEventListener(
+  "pointercancel",
+  event => {
+    finishJoystickPointer(event, true);
+  }
+);
+    
 sendButton.addEventListener("click", startSender);
 viewButton.addEventListener("click", startViewer);
 
@@ -3824,128 +4217,6 @@ pcFullscreenButton.addEventListener(
 );
 
 
-/*
-  iPhone・小さい画面で，
-  映像右下の同じ場所を3回タップすると
-  全画面アイコンを表示する
-*/
-
-videoWrapper.addEventListener(
-  "pointerdown",
-  event => {
-
-    if (!isMobileFullscreenLayout()) {
-      return;
-    }
-
-    /*
-      表示された全画面ボタンそのものを
-      押した場合は三回タップ判定をしない
-    */
-
-    if (
-      event.target.closest(
-        "#pcFullscreenButton"
-      )
-    ) {
-      return;
-    }
-
-    const rect =
-      videoWrapper.getBoundingClientRect();
-
-    const pointerX =
-      event.clientX - rect.left;
-
-    const pointerY =
-      event.clientY - rect.top;
-
-
-    /*
-      映像の右下120px四方だけを
-      三回タップの対象にする
-    */
-
-    const insideBottomRight =
-      pointerX >=
-        rect.width -
-        MOBILE_FULLSCREEN_ZONE_SIZE_PX &&
-      pointerY >=
-        rect.height -
-        MOBILE_FULLSCREEN_ZONE_SIZE_PX;
-
-    if (!insideBottomRight) {
-
-      mobileFullscreenTapCount = 0;
-      return;
-    }
-
-
-    /*
-      この右下部分では，
-      ジョイスティックを作動させない
-    */
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    const now = performance.now();
-
-    const timeFromLastTap =
-      now - mobileFullscreenLastTapTime;
-
-    const distanceFromLastTap =
-      Math.hypot(
-        event.clientX -
-          mobileFullscreenLastTapX,
-
-        event.clientY -
-          mobileFullscreenLastTapY
-      );
-
-    const sameTapSeries =
-      timeFromLastTap <=
-        MOBILE_FULLSCREEN_TAP_LIMIT_MS &&
-      distanceFromLastTap <=
-        MOBILE_FULLSCREEN_SAME_PLACE_PX;
-
-
-    if (sameTapSeries) {
-      mobileFullscreenTapCount += 1;
-    } else {
-      mobileFullscreenTapCount = 1;
-    }
-
-
-    mobileFullscreenLastTapTime = now;
-    mobileFullscreenLastTapX =
-      event.clientX;
-
-    mobileFullscreenLastTapY =
-      event.clientY;
-
-
-    /*
-      三回タップされたら，
-      アイコンを4秒間表示する
-    */
-
-    if (mobileFullscreenTapCount >= 3) {
-
-      mobileFullscreenTapCount = 0;
-
-      showMobileFullscreenButton();
-    }
-
-  },
-
-  /*
-    ジョイスティックのpointerdownより先に
-    この処理を実行する
-  */
-
-  true
-);
 
 
 /*
