@@ -794,13 +794,22 @@ body.mobilePseudoFullscreenActive {
 
 #videoWrapper.mobilePseudoFullscreen {
   position: fixed;
-  inset: 0;
 
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
+  /*
+    iPhone版Chromeでは，
+    JavaScriptで実際に見えている画面範囲を入れる
+  */
+
+  left: var(--mobile-viewport-left, 0px);
+  top: var(--mobile-viewport-top, 0px);
+
+  width: var(--mobile-viewport-width, 100vw);
+  height: var(--mobile-viewport-height, 100dvh);
 
   z-index: 2000;
+
+  margin: 0;
+  padding: 0;
 
   border: none;
   border-radius: 0;
@@ -3528,9 +3537,81 @@ function restoreStopButtonSize() {
   iPhone用の疑似全画面を開始
 */
 
+/*
+  iPhone版Chromeを含むモバイルブラウザで，
+  疑似全画面を実際に見えている範囲へ合わせる
+*/
+
+function updateMobilePseudoFullscreenViewport() {
+
+  /*
+    visualViewportが使える場合は，
+    ブラウザ内で現在実際に見えている範囲を使う
+  */
+
+  if (window.visualViewport) {
+
+    const viewport = window.visualViewport;
+
+    videoWrapper.style.setProperty(
+      "--mobile-viewport-left",
+      `${viewport.offsetLeft}px`
+    );
+
+    videoWrapper.style.setProperty(
+      "--mobile-viewport-top",
+      `${viewport.offsetTop}px`
+    );
+
+    videoWrapper.style.setProperty(
+      "--mobile-viewport-width",
+      `${viewport.width}px`
+    );
+
+    videoWrapper.style.setProperty(
+      "--mobile-viewport-height",
+      `${viewport.height}px`
+    );
+
+    return;
+  }
+
+
+  /*
+    visualViewportがないブラウザ用
+  */
+
+  videoWrapper.style.setProperty(
+    "--mobile-viewport-left",
+    "0px"
+  );
+
+  videoWrapper.style.setProperty(
+    "--mobile-viewport-top",
+    "0px"
+  );
+
+  videoWrapper.style.setProperty(
+    "--mobile-viewport-width",
+    `${window.innerWidth}px`
+  );
+
+  videoWrapper.style.setProperty(
+    "--mobile-viewport-height",
+    `${window.innerHeight}px`
+  );
+}
+    
 function enterMobilePseudoFullscreen() {
 
   preserveStopButtonSize();
+
+  /*
+    疑似全画面にする前に，
+    現在見えている画面サイズを取得する
+  */
+
+  updateMobilePseudoFullscreenViewport();
 
   videoWrapper.classList.add(
     "mobilePseudoFullscreen"
@@ -3541,6 +3622,26 @@ function enterMobilePseudoFullscreen() {
   );
 
   updateFullscreenIcon(true);
+
+
+  /*
+    Chromeでは疑似全画面へ切り替えた直後に
+    表示領域が変化することがあるため再取得する
+  */
+
+  requestAnimationFrame(
+    updateMobilePseudoFullscreenViewport
+  );
+
+  setTimeout(
+    updateMobilePseudoFullscreenViewport,
+    150
+  );
+
+  setTimeout(
+    updateMobilePseudoFullscreenViewport,
+    400
+  );
 }
 
 
@@ -3557,6 +3658,28 @@ function exitMobilePseudoFullscreen() {
   document.body.classList.remove(
     "mobilePseudoFullscreenActive"
   );
+
+
+  /*
+    疑似全画面用に設定した画面サイズを解除する
+  */
+
+  videoWrapper.style.removeProperty(
+    "--mobile-viewport-left"
+  );
+
+  videoWrapper.style.removeProperty(
+    "--mobile-viewport-top"
+  );
+
+  videoWrapper.style.removeProperty(
+    "--mobile-viewport-width"
+  );
+
+  videoWrapper.style.removeProperty(
+    "--mobile-viewport-height"
+  );
+
 
   restoreStopButtonSize();
   updateFullscreenIcon(false);
@@ -3904,27 +4027,28 @@ function refreshMobileFullscreenAfterRotation() {
         横向きになっても疑似全画面を維持する
       */
 
-      if (isMobilePseudoFullscreen()) {
+    if (isMobilePseudoFullscreen()) {
 
-        videoWrapper.classList.add(
-          "mobilePseudoFullscreen"
-        );
+  videoWrapper.classList.add(
+    "mobilePseudoFullscreen"
+  );
 
-        document.body.classList.add(
-          "mobilePseudoFullscreenActive"
-        );
+  document.body.classList.add(
+    "mobilePseudoFullscreenActive"
+  );
 
-        updateFullscreenIcon(true);
+  /*
+    回転後の実際の表示領域へ合わせ直す
+  */
 
-        /*
-          回転直後にアイコンが
-          出っぱなしになるのを防ぐ
-        */
+  updateMobilePseudoFullscreenViewport();
 
-        hideMobileFullscreenButton();
+  updateFullscreenIcon(true);
 
-        return;
-      }
+  hideMobileFullscreenButton();
+
+  return;
+}
 
 
       /*
@@ -3955,6 +4079,34 @@ window.addEventListener(
   "resize",
   refreshMobileFullscreenAfterRotation
 );
+
+    /*
+  iPhone版Chromeでブラウザバーやタブ表示により
+  実際に見えている範囲が変化したときの補正
+*/
+
+if (window.visualViewport) {
+
+  window.visualViewport.addEventListener(
+    "resize",
+    () => {
+
+      if (isMobilePseudoFullscreen()) {
+        updateMobilePseudoFullscreenViewport();
+      }
+    }
+  );
+
+  window.visualViewport.addEventListener(
+    "scroll",
+    () => {
+
+      if (isMobilePseudoFullscreen()) {
+        updateMobilePseudoFullscreenViewport();
+      }
+    }
+  );
+}
 
     window.addEventListener("beforeunload", () => {
       stopAll(false);
