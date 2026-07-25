@@ -1421,6 +1421,146 @@ body.mobilePseudoFullscreenActive {
   line-height: 1.5;
 }
 
+  /* ======================================
+   STOPボタン表示設定
+====================================== */
+
+.stopVisibilitySetting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  margin: 0 0 8px;
+  padding: 10px 14px;
+
+  border: 1px solid rgba(124, 157, 216, 0.2);
+  border-radius: 11px;
+
+  background: rgba(12, 27, 54, 0.72);
+}
+
+.stopVisibilityText {
+  min-width: 0;
+}
+
+.stopVisibilityTitle {
+  display: block;
+  color: #f3f6ff;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1.35;
+}
+
+.stopVisibilityDescription {
+  display: block;
+  margin-top: 2px;
+  color: #9eacc8;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.stopVisibilityControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  margin: 0;
+  cursor: pointer;
+}
+
+.stopVisibilityControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stopVisibilitySwitch {
+  position: relative;
+  display: block;
+
+  width: 52px;
+  height: 29px;
+  flex-shrink: 0;
+
+  border: 1px solid rgba(160, 182, 225, 0.36);
+  border-radius: 999px;
+
+  background: #536078;
+
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.stopVisibilitySwitch::after {
+  content: "";
+
+  position: absolute;
+  left: 3px;
+  top: 3px;
+
+  width: 21px;
+  height: 21px;
+
+  border-radius: 50%;
+  background: #ffffff;
+
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.32);
+  transition: transform 0.2s;
+}
+
+/* チェックあり＝STOPボタンを表示 */
+.stopVisibilityControl input:checked +
+.stopVisibilitySwitch {
+  border-color: rgba(103, 141, 255, 0.8);
+  background: #5265ed;
+}
+
+.stopVisibilityControl input:checked +
+.stopVisibilitySwitch::after {
+  transform: translateX(23px);
+}
+
+.stopVisibilityState {
+  min-width: 42px;
+  color: #e8efff;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+/* 設定により映像上のSTOPボタンを隠す */
+#driveStopButton.stopButtonHidden {
+  display: none !important;
+}
+
+/* ライトモード */
+body.lightTheme .stopVisibilitySetting {
+  border-color: #cbd3df;
+  background: #f3f5f8;
+}
+
+body.lightTheme .stopVisibilityTitle {
+  color: #344054;
+}
+
+body.lightTheme .stopVisibilityDescription {
+  color: #667085;
+}
+
+body.lightTheme .stopVisibilityState {
+  color: #344054;
+}
+
 
 /* ======================================
    背景設定のトグル
@@ -2108,6 +2248,19 @@ body.lightTheme #roomName:disabled {
         STOP設定
       </h2>
 
+     <span
+      id="stopVisibilityState"
+      class="stopVisibilityState"
+    >
+      表示
+    </span>
+
+  </label>
+
+</div>
+
+
+      
       <div class="settingsGroupCards">
 
 
@@ -2481,6 +2634,16 @@ const pcStopKey =
 
 const iphoneStopGesture =
   document.getElementById("iphoneStopGesture");
+
+const stopButtonVisibleToggle =
+  document.getElementById(
+    "stopButtonVisibleToggle"
+  );
+
+const stopVisibilityState =
+  document.getElementById(
+    "stopVisibilityState"
+  );
 
 const themeModeToggle =
   document.getElementById("themeModeToggle");
@@ -5542,6 +5705,21 @@ if (window.visualViewport) {
 // 詳細設定の保存
 // ======================================
 
+function applyStopButtonVisibility() {
+
+  const shouldShow =
+    stopButtonVisibleToggle.checked;
+
+  driveStopButton.classList.toggle(
+    "stopButtonHidden",
+    !shouldShow
+  );
+
+  stopVisibilityState.textContent =
+    shouldShow ? "表示" : "非表示";
+}
+
+    
 function loadSettings() {
 
   const savedPcKey =
@@ -5560,6 +5738,20 @@ function loadSettings() {
     iphoneStopGesture.value =
       savedGesture;
   }
+
+  const savedStopButtonVisible =
+    localStorage.getItem(
+      "stopButtonVisible"
+    );
+
+  /*
+    保存値がない最初の起動では表示する。
+    "false"と保存されている場合だけ非表示。
+  */
+  stopButtonVisibleToggle.checked =
+    savedStopButtonVisible !== "false";
+
+  applyStopButtonVisibility();
 }
 
 
@@ -5573,6 +5765,11 @@ function saveSettings() {
   localStorage.setItem(
     "iphoneStopGesture",
     iphoneStopGesture.value
+  );
+
+  localStorage.setItem(
+    "stopButtonVisible",
+    String(stopButtonVisibleToggle.checked)
   );
 }
 
@@ -5594,6 +5791,15 @@ iphoneStopGesture.addEventListener(
   "change",
   saveSettings
 );
+
+stopButtonVisibleToggle.addEventListener(
+  "change",
+  () => {
+    applyStopButtonVisibility();
+    saveSettings();
+  }
+);
+    
 // ======================================
 // パソコンのキーによるSTOP・解除
 // ======================================
