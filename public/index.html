@@ -2199,7 +2199,7 @@ body.mobilePseudoFullscreenActive {
             <input
               id="themeModeToggle"
               type="checkbox"
-              disabled
+         
             >
 
             <span
@@ -5553,6 +5553,29 @@ if (
     }
 
     toggleDriveStop(event);
+  }
+);
+
+// ======================================
+// 背景テーマ切り替え
+// ======================================
+
+themeModeToggle.addEventListener(
+  "change",
+  () => {
+    document.body.classList.toggle(
+      "lightTheme",
+      themeModeToggle.checked
+    );
+
+    const themeToggleText =
+      document.querySelector(".themeToggleText");
+
+    if (themeModeToggle.checked) {
+      themeToggleText.textContent = "ライト";
+    } else {
+      themeToggleText.textContent = "ダーク";
+    }
   }
 );
 
