@@ -1013,6 +1013,27 @@ body.mobilePseudoFullscreenActive {
     object-fit: contain;
   }
 
+/* STOPボタン編集中は映像を静止・薄く見せる */
+#videoWrapper.stopButtonEditing video {
+  opacity: 0.48;
+  filter: grayscale(35%);
+}
+
+/* 編集中はSTOPボタンを操作可能な濃さにする */
+#videoWrapper.stopButtonEditing #driveStopButton {
+  opacity: 1;
+  filter: none;
+  cursor: move;
+  touch-action: none;
+}
+
+/* 右下のサイズ変更ハンドル */
+#videoWrapper.stopButtonEditing #stopResizeHandle {
+  display: flex;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+  
   #videoWrapper.stopButtonEditing #driveStopButton {
     cursor: move;
     border: 3px dashed #ffffff;
@@ -3156,6 +3177,16 @@ function applyDriveStopState(stopped) {
 
     function updateDriveStopButtonAvailability() {
 
+  /*
+    編集中はドラッグ・リサイズのため，
+    STOPボタンを操作可能にする。
+    押しても非常停止処理は実行しない。
+  */
+  if (stopEditorActive) {
+    driveStopButton.disabled = false;
+    return;
+  }
+
   const channelConnected =
     driveChannel &&
     driveChannel.readyState === "open";
@@ -3166,8 +3197,7 @@ function applyDriveStopState(stopped) {
 
   driveStopButton.disabled =
     !channelConnected ||
-    settingsActive ||
-    stopEditorActive;
+    settingsActive;
 }
 
 function stopDrivingForSettings() {
@@ -3764,6 +3794,478 @@ driveStopButton.addEventListener(
   "pointerdown",
   toggleDriveStop
 );
+
+    // ======================================
+// STOPボタンの位置・サイズ編集
+// PC・iPhone共通
+// ======================================
+
+const STOP_GEOMETRY_STORAGE_KEY =
+  "driveStopButtonGeometry";
+
+let stopButtonGeometry = {
+  left: 68,
+  top: 4,
+  width: 28,
+  height: 15
+};
+
+let videoWasPlayingBeforeStopEdit = false;
+
+
+/*
+  保存済みの位置・サイズを画面へ反映
+*/
+function applyStopButtonGeometry() {
+
+  driveStopButton.style.left =
+    `${stopButtonGeometry.left}%`;
+
+  driveStopButton.style.top =
+    `${stopButtonGeometry.top}%`;
+
+  driveStopButton.style.width =
+    `${stopButtonGeometry.width}%`;
+
+  driveStopButton.style.height =
+    `${stopButtonGeometry.height}%`;
+}
+
+
+/*
+  位置・サイズをブラウザへ保存
+*/
+function saveStopButtonGeometry() {
+
+  localStorage.setItem(
+    STOP_GEOMETRY_STORAGE_KEY,
+    JSON.stringify(stopButtonGeometry)
+  );
+}
+
+
+/*
+  保存済みの位置・サイズを読み込む
+*/
+function loadStopButtonGeometry() {
+
+  const saved =
+    localStorage.getItem(
+      STOP_GEOMETRY_STORAGE_KEY
+    );
+
+  if (!saved) {
+    applyStopButtonGeometry();
+    return;
+  }
+
+  try {
+
+    const parsed = JSON.parse(saved);
+
+    if (
+      Number.isFinite(parsed.left) &&
+      Number.isFinite(parsed.top) &&
+      Number.isFinite(parsed.width) &&
+      Number.isFinite(parsed.height)
+    ) {
+      stopButtonGeometry = parsed;
+    }
+
+  } catch (error) {
+
+    console.error(
+      "STOPボタン設定の読み込みに失敗しました。",
+      error
+    );
+  }
+
+  applyStopButtonGeometry();
+}
+
+
+/*
+  数値を指定範囲内へ収める
+*/
+function clampStopEditValue(
+  value,
+  minimum,
+  maximum
+) {
+  return Math.min(
+    maximum,
+    Math.max(minimum, value)
+  );
+}
+
+
+/*
+  STOPボタン編集を開始
+*/
+function startStopButtonEditor() {
+
+  stopEditorActive = true;
+
+  /*
+    詳細設定は開いたままにする
+  */
+  settingsPanel.open = true;
+
+  openStopEditorButton.textContent =
+    "編集終了";
+
+  videoWrapper.classList.add(
+    "stopButtonEditing"
+  );
+
+  /*
+    映像を現在のフレームで停止する。
+    WebRTCの接続自体や映像トラックは切断しない。
+  */
+  videoWasPlayingBeforeStopEdit =
+    !videoElement.paused;
+
+  if (
+    videoElement.srcObject &&
+    !videoElement.classList.contains("hidden")
+  ) {
+    videoElement.pause();
+  }
+
+  /*
+    編集中はSTOPボタンをドラッグできるようにする
+  */
+  updateDriveStopButtonAvailability();
+
+  driveStatusElement.textContent =
+    "STOPボタン編集中です。ドラッグで移動し，右下の矢印で大きさを変更できます。";
+}
+
+
+/*
+  STOPボタン編集を終了
+*/
+async function finishStopButtonEditor() {
+
+  stopEditorActive = false;
+  stopEditAction = null;
+
+  openStopEditorButton.textContent =
+    "STOPボタン編集";
+
+  videoWrapper.classList.remove(
+    "stopButtonEditing"
+  );
+
+  saveStopButtonGeometry();
+
+  /*
+    編集前に再生中だった場合は映像を再開
+  */
+  if (
+    videoWasPlayingBeforeStopEdit &&
+    videoElement.srcObject
+  ) {
+    try {
+      await videoElement.play();
+    } catch (error) {
+      console.error(
+        "映像を再開できませんでした。",
+        error
+      );
+    }
+  }
+
+  updateDriveStopButtonAvailability();
+
+  driveStatusElement.textContent =
+    "STOPボタンの位置と大きさを保存しました。";
+}
+
+
+/*
+  「STOPボタン編集」／「編集終了」の切替
+*/
+openStopEditorButton.addEventListener(
+  "click",
+  () => {
+
+    if (stopEditorActive) {
+      finishStopButtonEditor();
+    } else {
+      startStopButtonEditor();
+    }
+  }
+);
+
+
+/*
+  STOPボタン本体を押したとき，
+  移動編集を開始
+*/
+driveStopButton.addEventListener(
+  "pointerdown",
+  event => {
+
+    if (!stopEditorActive) {
+      return;
+    }
+
+    /*
+      右下のリサイズハンドルを押した場合は，
+      移動処理を開始しない
+    */
+    if (
+      event.target.closest(
+        "#stopResizeHandle"
+      )
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    stopEditAction = "move";
+
+    stopEditStartX = event.clientX;
+    stopEditStartY = event.clientY;
+
+    const wrapperRect =
+      videoWrapper.getBoundingClientRect();
+
+    const buttonRect =
+      driveStopButton.getBoundingClientRect();
+
+    stopEditStartLeft =
+      buttonRect.left - wrapperRect.left;
+
+    stopEditStartTop =
+      buttonRect.top - wrapperRect.top;
+
+    driveStopButton.setPointerCapture(
+      event.pointerId
+    );
+  }
+);
+
+
+/*
+  右下の矢印を押したとき，
+  サイズ変更を開始
+*/
+stopResizeHandle.addEventListener(
+  "pointerdown",
+  event => {
+
+    if (!stopEditorActive) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    stopEditAction = "resize";
+
+    stopEditStartX = event.clientX;
+    stopEditStartY = event.clientY;
+
+    const buttonRect =
+      driveStopButton.getBoundingClientRect();
+
+    stopEditStartWidth =
+      buttonRect.width;
+
+    stopEditStartHeight =
+      buttonRect.height;
+
+    stopResizeHandle.setPointerCapture(
+      event.pointerId
+    );
+  }
+);
+
+
+/*
+  マウスまたは指を動かしたとき，
+  移動・サイズ変更を反映
+*/
+window.addEventListener(
+  "pointermove",
+  event => {
+
+    if (
+      !stopEditorActive ||
+      !stopEditAction
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const wrapperRect =
+      videoWrapper.getBoundingClientRect();
+
+    if (
+      wrapperRect.width <= 0 ||
+      wrapperRect.height <= 0
+    ) {
+      return;
+    }
+
+    const deltaX =
+      event.clientX - stopEditStartX;
+
+    const deltaY =
+      event.clientY - stopEditStartY;
+
+
+    /*
+      STOPボタンの移動
+    */
+    if (stopEditAction === "move") {
+
+      const buttonRect =
+        driveStopButton.getBoundingClientRect();
+
+      const maximumLeft =
+        wrapperRect.width -
+        buttonRect.width;
+
+      const maximumTop =
+        wrapperRect.height -
+        buttonRect.height;
+
+      const newLeftPx =
+        clampStopEditValue(
+          stopEditStartLeft + deltaX,
+          0,
+          maximumLeft
+        );
+
+      const newTopPx =
+        clampStopEditValue(
+          stopEditStartTop + deltaY,
+          0,
+          maximumTop
+        );
+
+      stopButtonGeometry.left =
+        newLeftPx /
+        wrapperRect.width *
+        100;
+
+      stopButtonGeometry.top =
+        newTopPx /
+        wrapperRect.height *
+        100;
+
+      applyStopButtonGeometry();
+    }
+
+
+    /*
+      STOPボタンのサイズ変更
+    */
+    if (stopEditAction === "resize") {
+
+      const buttonRect =
+        driveStopButton.getBoundingClientRect();
+
+      const buttonLeft =
+        buttonRect.left -
+        wrapperRect.left;
+
+      const buttonTop =
+        buttonRect.top -
+        wrapperRect.top;
+
+      const maximumWidth =
+        wrapperRect.width -
+        buttonLeft;
+
+      const maximumHeight =
+        wrapperRect.height -
+        buttonTop;
+
+      const minimumWidth =
+        Math.min(
+          100,
+          wrapperRect.width
+        );
+
+      const minimumHeight =
+        Math.min(
+          52,
+          wrapperRect.height
+        );
+
+      const newWidthPx =
+        clampStopEditValue(
+          stopEditStartWidth + deltaX,
+          minimumWidth,
+          maximumWidth
+        );
+
+      const newHeightPx =
+        clampStopEditValue(
+          stopEditStartHeight + deltaY,
+          minimumHeight,
+          maximumHeight
+        );
+
+      stopButtonGeometry.width =
+        newWidthPx /
+        wrapperRect.width *
+        100;
+
+      stopButtonGeometry.height =
+        newHeightPx /
+        wrapperRect.height *
+        100;
+
+      applyStopButtonGeometry();
+    }
+  },
+  { passive: false }
+);
+
+
+/*
+  マウスまたは指を離したら編集操作を終了
+*/
+function finishStopEditPointerAction() {
+
+  if (!stopEditAction) {
+    return;
+  }
+
+  stopEditAction = null;
+  saveStopButtonGeometry();
+}
+
+window.addEventListener(
+  "pointerup",
+  finishStopEditPointerAction
+);
+
+window.addEventListener(
+  "pointercancel",
+  finishStopEditPointerAction
+);
+
+
+/*
+  旧編集画面の完了ボタンが残っていても
+  同じ終了処理を行う
+*/
+if (finishStopEditorButton) {
+
+  finishStopEditorButton.addEventListener(
+    "click",
+    finishStopButtonEditor
+  );
+}
     
 stopButton.addEventListener(
   "click",
@@ -3987,27 +4489,20 @@ function showMobileFullscreenButton() {
   実際の大きさを固定する
 */
 
+/*
+  STOPボタンは位置・サイズを割合で保持するため，
+  全画面切替時にpxへ変換しない
+*/
 function preserveStopButtonSize() {
-
-  const stopButtonRect =
-    driveStopButton.getBoundingClientRect();
-
-  driveStopButton.style.width =
-    `${stopButtonRect.width}px`;
-
-  driveStopButton.style.height =
-    `${stopButtonRect.height}px`;
+  applyStopButtonGeometry();
 }
 
-
 /*
-  STOPボタンの大きさを
-  通常表示の割合指定へ戻す
+  通常画面へ戻ったときも，
+  保存済みの割合をそのまま再適用する
 */
-
 function restoreStopButtonSize() {
-  driveStopButton.style.width = "";
-  driveStopButton.style.height = "";
+  applyStopButtonGeometry();
 }
 
 
@@ -4537,6 +5032,7 @@ iphoneStopGesture.addEventListener(
 // ----------
 
 loadSettings();
+loadStopButtonGeometry();
     
   </script>
 </body>
