@@ -3373,6 +3373,13 @@ function stopDrivingForSettings() {
       */
       await finishStopButtonEditor();
 
+       const settingsSummary =
+    settingsPanel.querySelector("summary");
+
+  if (settingsSummary instanceof HTMLElement) {
+    settingsSummary.blur();
+  }
+
       /*
         自分側の詳細設定を閉じたため，
         相手側も詳細設定中でなければ
@@ -5529,13 +5536,16 @@ window.addEventListener(
       return;
     }
 
-    // フォーカス中のボタンを解除する
-    if (
-      document.activeElement instanceof
-      HTMLButtonElement
-    ) {
-      document.activeElement.blur();
-    }
+   // 詳細設定のsummaryなどに残ったフォーカスを解除する
+const activeElement =
+  document.activeElement;
+
+if (
+  activeElement instanceof HTMLElement &&
+  activeElement !== document.body
+) {
+  activeElement.blur();
+}
 
     // STOPボタンが使用できない状態
     if (driveStopButton.disabled) {
