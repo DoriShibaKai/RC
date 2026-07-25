@@ -1832,8 +1832,9 @@ body.mobilePseudoFullscreenActive {
 ====================================== */
 
 /* 「接続する部屋名」 */
-body.lightTheme label {
-  color: #44516a;
+body.lightTheme .roomField > label {
+  color: #39465f;
+  font-weight: 700;
 }
 
 /* 「通信するデバイスは同じ部屋名を使用」 */
@@ -1841,22 +1842,25 @@ body.lightTheme .note {
   color: #64748b;
 }
 
-/* 部屋名入力欄 */
-body.lightTheme #roomName {
-  border-color: #aab3c2;
-  background: #d9dde4;
-  color: #4b5563;
-  -webkit-text-fill-color: #4b5563;
+/* 部屋名を変更できるとき */
+body.lightTheme #roomName:not(:disabled) {
+  border-color: #7f8ba0;
+  background: #ffffff;
+  color: #263247;
+  -webkit-text-fill-color: #263247;
   opacity: 1;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-/* 部屋名入力欄がdisabledのとき */
+/* 接続中など，部屋名を変更できないとき */
 body.lightTheme #roomName:disabled {
-  border-color: #aab3c2;
-  background: #d9dde4;
-  color: #4b5563;
-  -webkit-text-fill-color: #4b5563;
+  border-color: #b4bcc9;
+  background: #dfe3e9;
+  color: #7a8494;
+  -webkit-text-fill-color: #7a8494;
   opacity: 1;
+  box-shadow: none;
 }
 
 </style>
