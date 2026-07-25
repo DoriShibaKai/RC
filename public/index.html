@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -4148,6 +4150,136 @@ function toggleDriveStop(event) {
 driveStopButton.addEventListener(
   "pointerdown",
   toggleDriveStop
+);
+
+// ======================================
+// タッチ端末：3本指スワイプによるSTOP・解除
+// ======================================
+
+const THREE_FINGER_SWIPE_MIN_DISTANCE = 70;
+const THREE_FINGER_SWIPE_MAX_VERTICAL = 90;
+
+let threeFingerSwipeTracking = false;
+let threeFingerSwipeTriggered = false;
+let threeFingerSwipeStartX = 0;
+let threeFingerSwipeStartY = 0;
+
+function getTouchCenter(touchList) {
+  let x = 0;
+  let y = 0;
+
+  for (const touch of touchList) {
+    x += touch.clientX;
+    y += touch.clientY;
+  }
+
+  return {
+    x: x / touchList.length,
+    y: y / touchList.length
+  };
+}
+
+window.addEventListener(
+  "touchstart",
+  event => {
+    if (event.touches.length !== 3) {
+      threeFingerSwipeTracking = false;
+      threeFingerSwipeTriggered = false;
+      return;
+    }
+
+    const target = event.target;
+
+    // 入力欄やプルダウンの操作は妨げない
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+
+    const center = getTouchCenter(event.touches);
+
+    threeFingerSwipeStartX = center.x;
+    threeFingerSwipeStartY = center.y;
+    threeFingerSwipeTracking = true;
+    threeFingerSwipeTriggered = false;
+  },
+  { passive: true }
+);
+
+window.addEventListener(
+  "touchmove",
+  event => {
+    if (
+      !threeFingerSwipeTracking ||
+      threeFingerSwipeTriggered ||
+      event.touches.length !== 3
+    ) {
+      return;
+    }
+
+    const selectedGesture = iphoneStopGesture.value;
+
+    if (selectedGesture === "none") {
+      threeFingerSwipeTracking = false;
+      return;
+    }
+
+    const center = getTouchCenter(event.touches);
+    const deltaX = center.x - threeFingerSwipeStartX;
+    const deltaY = center.y - threeFingerSwipeStartY;
+
+    const horizontalEnough =
+      Math.abs(deltaX) >= THREE_FINGER_SWIPE_MIN_DISTANCE;
+
+    const mostlyHorizontal =
+      Math.abs(deltaX) > Math.abs(deltaY) &&
+      Math.abs(deltaY) <= THREE_FINGER_SWIPE_MAX_VERTICAL;
+
+    if (!horizontalEnough || !mostlyHorizontal) {
+      return;
+    }
+
+    const swipedRight = deltaX > 0;
+    const gestureMatches =
+      selectedGesture === "threeBoth" ||
+      (selectedGesture === "threeRight" && swipedRight) ||
+      (selectedGesture === "threeLeft" && !swipedRight);
+
+    if (!gestureMatches) {
+      return;
+    }
+
+    threeFingerSwipeTriggered = true;
+    event.preventDefault();
+
+    // STOPボタンを押せない状態ではジェスチャーも実行しない
+    if (driveStopButton.disabled) {
+      return;
+    }
+
+    toggleDriveStop(event);
+  },
+  { passive: false }
+);
+
+function finishThreeFingerSwipe() {
+  threeFingerSwipeTracking = false;
+  threeFingerSwipeTriggered = false;
+}
+
+window.addEventListener(
+  "touchend",
+  finishThreeFingerSwipe,
+  { passive: true }
+);
+
+window.addEventListener(
+  "touchcancel",
+  finishThreeFingerSwipe,
+  { passive: true }
 );
 
 // ======================================
