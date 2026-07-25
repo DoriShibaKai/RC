@@ -1548,9 +1548,9 @@ background:
 
   background:
     linear-gradient(
-      #bb5a83 0%,
-      #d07ca2 50%,
-      #bb5a83 100%
+       #bb5a83 0%,
+    #d07ca2 50%,
+    #bb5a83 100%
     );
 }
 
@@ -1585,11 +1585,23 @@ background:
     font-size: 12px;
   }
 
-  /* STOPボタン編集ボタンとプルダウン */
-  .settingsActionButton,
-  .settingsField select {
-    font-size: 13px;
-  }
+/* STOPボタン編集ボタンとプルダウン */
+.settingsActionButton,
+.settingsField select {
+  font-size: 13px;
+}
+
+/* STOPボタン編集ボタンだけ */
+.settingsActionButton {
+  width: 112px;
+
+  background:
+    linear-gradient(
+      #b14f79 0%,
+      #c96f98 50%,
+      #b14f79 100%
+    );
+}
 }
 
 
