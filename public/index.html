@@ -3322,6 +3322,12 @@ const MOBILE_FULLSCREEN_SAME_PLACE_PX = 55;
 const MOBILE_FULLSCREEN_ZONE_SIZE_PX = 120;
 const MOBILE_FULLSCREEN_VISIBLE_MS = 4000;
 
+/* アイコン表示直後の誤操作防止時間 */
+const MOBILE_FULLSCREEN_LOCK_MS = 1000;
+
+let mobileFullscreenButtonLocked = false;
+let mobileFullscreenLockTimer = null;
+
 
 /*
   iPhoneなどの画面幅かどうか
@@ -3431,9 +3437,44 @@ function showMobileFullscreenButton() {
     return;
   }
 
+  /*
+    表示直後は，連続タップがそのまま
+    全画面ボタンに当たらないようロックする
+  */
+
+  mobileFullscreenButtonLocked = true;
+
   pcFullscreenButton.classList.add(
     "mobileFullscreenVisible"
   );
+
+  pcFullscreenButton.setAttribute(
+    "aria-disabled",
+    "true"
+  );
+
+  if (mobileFullscreenLockTimer) {
+    clearTimeout(mobileFullscreenLockTimer);
+  }
+
+  mobileFullscreenLockTimer = setTimeout(
+    () => {
+
+      mobileFullscreenButtonLocked = false;
+
+      pcFullscreenButton.removeAttribute(
+        "aria-disabled"
+      );
+
+      mobileFullscreenLockTimer = null;
+    },
+    MOBILE_FULLSCREEN_LOCK_MS
+  );
+
+
+  /*
+    数秒後に全画面アイコンを隠す
+  */
 
   if (mobileFullscreenHideTimer) {
     clearTimeout(mobileFullscreenHideTimer);
@@ -3627,7 +3668,20 @@ async function togglePcFullscreen() {
 pcFullscreenButton.addEventListener(
   "pointerdown",
   event => {
+
+    event.preventDefault();
     event.stopPropagation();
+
+    /*
+      アイコン表示直後の連続タップは無視する
+    */
+
+    if (
+      isMobileFullscreenLayout() &&
+      mobileFullscreenButtonLocked
+    ) {
+      event.stopImmediatePropagation();
+    }
   }
 );
 
@@ -3636,7 +3690,20 @@ pcFullscreenButton.addEventListener(
   "click",
   event => {
 
+    event.preventDefault();
     event.stopPropagation();
+
+    /*
+      アイコンが表示されてから1秒間は，
+      全画面への切り替えを実行しない
+    */
+
+    if (
+      isMobileFullscreenLayout() &&
+      mobileFullscreenButtonLocked
+    ) {
+      return;
+    }
 
     togglePcFullscreen();
   }
