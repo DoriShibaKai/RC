@@ -37,6 +37,11 @@
     --danger-end: #d7222c;
 
     --accent: #62df83;
+
+    --page-bg-light: #f5f7fb;
+    --panel-bg-light-theme: #ffffff;
+    --text-main-light: #1b2435;
+    --text-sub-light: #5c6d87;
   }
 
   body {
@@ -65,6 +70,11 @@
       Meiryo,
       sans-serif;
   }
+
+  body.lightTheme {
+  background: #f5f7fb;
+  color: var(--text-main-light);
+}
 
   button,
   input,
@@ -194,6 +204,10 @@
       0 16px 38px rgba(0, 0, 0, 0.27),
       inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
+
+  body.lightTheme .panel {
+  background: #ffffff;
+}
 
   .panel::before {
     content: "";
@@ -5460,9 +5474,13 @@ function saveSettings() {
 
 pcStopKey.addEventListener(
   "change",
-  saveSettings
-);
+  () => {
+    saveSettings();
 
+    // 選択後にプルダウンのフォーカスを外す
+    pcStopKey.blur();
+  }
+);
 iphoneStopGesture.addEventListener(
   "change",
   saveSettings
@@ -5493,9 +5511,16 @@ window.addEventListener(
       return;
     }
 
-    // 入力欄やプルダウンの操作中は反応させない
+    /*
+      Space・Enterによる，
+      ボタン押下やプルダウン操作などの
+      ブラウザ標準動作を先に止める
+    */
+    event.preventDefault();
+
     const target = event.target;
 
+    // 入力欄・プルダウン操作中はSTOPしない
     if (
       target instanceof HTMLInputElement ||
       target instanceof HTMLSelectElement ||
@@ -5504,17 +5529,22 @@ window.addEventListener(
       return;
     }
 
+    // フォーカス中のボタンを解除する
+    if (
+      document.activeElement instanceof
+      HTMLButtonElement
+    ) {
+      document.activeElement.blur();
+    }
+
     // STOPボタンが使用できない状態
     if (driveStopButton.disabled) {
       return;
     }
 
-    event.preventDefault();
-
-      toggleDriveStop(event);
+    toggleDriveStop(event);
   }
 );
-
 
 // ----------
 // 起動時に読み込み
