@@ -2248,7 +2248,36 @@ body.lightTheme #roomName:disabled {
         STOP設定
       </h2>
 
-     <span
+ 
+
+<div class="stopVisibilitySetting">
+
+  <div class="stopVisibilityText">
+
+    <span class="stopVisibilityTitle">
+      STOPボタンを表示
+    </span>
+
+    <span class="stopVisibilityDescription">
+      安全が確保されている場合のみ非表示にしてください。
+    </span>
+
+  </div>
+
+  <label class="stopVisibilityControl">
+
+    <input
+      id="stopButtonVisibleToggle"
+      type="checkbox"
+      checked
+    >
+
+    <span
+      class="stopVisibilitySwitch"
+      aria-hidden="true"
+    ></span>
+
+    <span
       id="stopVisibilityState"
       class="stopVisibilityState"
     >
@@ -2258,6 +2287,7 @@ body.lightTheme #roomName:disabled {
   </label>
 
 </div>
+
 
 
       
@@ -2388,11 +2418,7 @@ body.lightTheme #roomName:disabled {
 
     <section class="settingsGroup">
 
-      <h2 class="settingsGroupTitle">
-        背景設定
-      </h2>
-
-      <div class="settingsGroupCards">
+         <div class="settingsGroupCards">
 
         <section
           class="
