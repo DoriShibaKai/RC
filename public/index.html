@@ -3706,45 +3706,151 @@ driveStopButton.addEventListener(
   toggleDriveStop
 );
 
-    // ======================================
+// ======================================
 // STOPボタンの位置・サイズ編集
-// PC・iPhone共通
+// 現在はPC通常画面・PC全画面を対象
 // ======================================
 
 const STOP_GEOMETRY_STORAGE_KEY =
-  "driveStopButtonGeometry";
+  "driveStopButtonGeometryV2";
 
+/*
+  幅・高さはpxで保存する。
+  xRatio・yRatioは，ボタンが移動できる範囲内での位置。
+  0 = 左端・上端
+  1 = 右端・下端
+*/
 let stopButtonGeometry = {
-  left: 68,
-  top: 4,
-  width: 28,
-  height: 15
+  xRatio: 0.94,
+  yRatio: 0.05,
+  widthPx: 180,
+  heightPx: 72
 };
 
 let videoWasPlayingBeforeStopEdit = false;
 
 
 /*
-  保存済みの位置・サイズを画面へ反映
+  数値を指定範囲内へ収める
 */
-function applyStopButtonGeometry() {
-
-  driveStopButton.style.left =
-    `${stopButtonGeometry.left}%`;
-
-  driveStopButton.style.top =
-    `${stopButtonGeometry.top}%`;
-
-  driveStopButton.style.width =
-    `${stopButtonGeometry.width}%`;
-
-  driveStopButton.style.height =
-    `${stopButtonGeometry.height}%`;
+function clampStopEditValue(
+  value,
+  minimum,
+  maximum
+) {
+  return Math.min(
+    maximum,
+    Math.max(minimum, value)
+  );
 }
 
 
 /*
-  位置・サイズをブラウザへ保存
+  保存されている大きさと位置を画面へ反映する
+*/
+function applyStopButtonGeometry() {
+
+  const wrapperRect =
+    videoWrapper.getBoundingClientRect();
+
+  if (
+    wrapperRect.width <= 0 ||
+    wrapperRect.height <= 0
+  ) {
+    return;
+  }
+
+  /*
+    保存サイズが現在の画面より大きい場合だけ，
+    画面内へ収まるサイズに補正する
+  */
+  const widthPx =
+    clampStopEditValue(
+      stopButtonGeometry.widthPx,
+      Math.min(78, wrapperRect.width),
+      wrapperRect.width
+    );
+
+  const heightPx =
+    clampStopEditValue(
+      stopButtonGeometry.heightPx,
+      Math.min(44, wrapperRect.height),
+      wrapperRect.height
+    );
+
+  /*
+    ボタン左上が移動できる最大距離
+  */
+  const movableWidth =
+    Math.max(
+      0,
+      wrapperRect.width - widthPx
+    );
+
+  const movableHeight =
+    Math.max(
+      0,
+      wrapperRect.height - heightPx
+    );
+
+  const leftPx =
+    movableWidth *
+    clampStopEditValue(
+      stopButtonGeometry.xRatio,
+      0,
+      1
+    );
+
+  const topPx =
+    movableHeight *
+    clampStopEditValue(
+      stopButtonGeometry.yRatio,
+      0,
+      1
+    );
+
+  driveStopButton.style.left =
+    `${leftPx}px`;
+
+  driveStopButton.style.top =
+    `${topPx}px`;
+
+  driveStopButton.style.width =
+    `${widthPx}px`;
+
+  driveStopButton.style.height =
+    `${heightPx}px`;
+}
+
+
+/*
+  レイアウト変更が完了したあとに再反映する
+*/
+function scheduleStopButtonGeometryApply() {
+
+  requestAnimationFrame(
+    () => {
+
+      requestAnimationFrame(
+        applyStopButtonGeometry
+      );
+    }
+  );
+
+  setTimeout(
+    applyStopButtonGeometry,
+    100
+  );
+
+  setTimeout(
+    applyStopButtonGeometry,
+    300
+  );
+}
+
+
+/*
+  位置・サイズをブラウザへ保存する
 */
 function saveStopButtonGeometry() {
 
@@ -3765,48 +3871,58 @@ function loadStopButtonGeometry() {
       STOP_GEOMETRY_STORAGE_KEY
     );
 
-  if (!saved) {
-    applyStopButtonGeometry();
-    return;
-  }
+  if (saved) {
 
-  try {
+    try {
 
-    const parsed = JSON.parse(saved);
+      const parsed =
+        JSON.parse(saved);
 
-    if (
-      Number.isFinite(parsed.left) &&
-      Number.isFinite(parsed.top) &&
-      Number.isFinite(parsed.width) &&
-      Number.isFinite(parsed.height)
-    ) {
-      stopButtonGeometry = parsed;
+      if (
+        Number.isFinite(parsed.xRatio) &&
+        Number.isFinite(parsed.yRatio) &&
+        Number.isFinite(parsed.widthPx) &&
+        Number.isFinite(parsed.heightPx)
+      ) {
+        stopButtonGeometry = {
+          xRatio:
+            clampStopEditValue(
+              parsed.xRatio,
+              0,
+              1
+            ),
+
+          yRatio:
+            clampStopEditValue(
+              parsed.yRatio,
+              0,
+              1
+            ),
+
+          widthPx:
+            Math.max(
+              78,
+              parsed.widthPx
+            ),
+
+          heightPx:
+            Math.max(
+              44,
+              parsed.heightPx
+            )
+        };
+      }
+
+    } catch (error) {
+
+      console.error(
+        "STOPボタン設定の読み込みに失敗しました。",
+        error
+      );
     }
-
-  } catch (error) {
-
-    console.error(
-      "STOPボタン設定の読み込みに失敗しました。",
-      error
-    );
   }
 
-  applyStopButtonGeometry();
-}
-
-
-/*
-  数値を指定範囲内へ収める
-*/
-function clampStopEditValue(
-  value,
-  minimum,
-  maximum
-) {
-  return Math.min(
-    maximum,
-    Math.max(minimum, value)
-  );
+  scheduleStopButtonGeometryApply();
 }
 
 
@@ -4061,17 +4177,21 @@ window.addEventListener(
           maximumTop
         );
 
-      stopButtonGeometry.left =
-        newLeftPx /
-        wrapperRect.width *
-        100;
+     /*
+  画面全体に対する割合ではなく，
+  ボタンが移動可能な範囲内での位置を保存する
+*/
+stopButtonGeometry.xRatio =
+  maximumLeft > 0
+    ? newLeftPx / maximumLeft
+    : 0;
 
-      stopButtonGeometry.top =
-        newTopPx /
-        wrapperRect.height *
-        100;
+stopButtonGeometry.yRatio =
+  maximumTop > 0
+    ? newTopPx / maximumTop
+    : 0;
 
-      applyStopButtonGeometry();
+applyStopButtonGeometry();
     }
 
 
@@ -4125,17 +4245,61 @@ window.addEventListener(
           maximumHeight
         );
 
-      stopButtonGeometry.width =
-        newWidthPx /
-        wrapperRect.width *
-        100;
+      /*
+  幅・高さは％ではなくpxで保存する
+*/
+stopButtonGeometry.widthPx =
+  newWidthPx;
 
-      stopButtonGeometry.height =
-        newHeightPx /
-        wrapperRect.height *
-        100;
+stopButtonGeometry.heightPx =
+  newHeightPx;
 
-      applyStopButtonGeometry();
+
+/*
+  サイズ変更により移動可能範囲が変わるため，
+  現在位置も新しい範囲に対する割合へ更新する
+*/
+const newMaximumLeft =
+  Math.max(
+    0,
+    wrapperRect.width -
+    newWidthPx
+  );
+
+const newMaximumTop =
+  Math.max(
+    0,
+    wrapperRect.height -
+    newHeightPx
+  );
+
+stopButtonGeometry.xRatio =
+  newMaximumLeft > 0
+    ? buttonLeft /
+      newMaximumLeft
+    : 0;
+
+stopButtonGeometry.yRatio =
+  newMaximumTop > 0
+    ? buttonTop /
+      newMaximumTop
+    : 0;
+
+stopButtonGeometry.xRatio =
+  clampStopEditValue(
+    stopButtonGeometry.xRatio,
+    0,
+    1
+  );
+
+stopButtonGeometry.yRatio =
+  clampStopEditValue(
+    stopButtonGeometry.yRatio,
+    0,
+    1
+  );
+
+applyStopButtonGeometry();
     }
   },
   { passive: false }
@@ -4386,26 +4550,21 @@ function showMobileFullscreenButton() {
 
 
 /*
-  全画面へ入る直前のSTOPボタンの
-  実際の大きさを固定する
-*/
-
-/*
-  STOPボタンは位置・サイズを割合で保持するため，
-  全画面切替時にpxへ変換しない
+  全画面へ入る直前に
+  現在のSTOPボタン設定を保存する
 */
 function preserveStopButtonSize() {
-  applyStopButtonGeometry();
+  saveStopButtonGeometry();
 }
+
 
 /*
-  通常画面へ戻ったときも，
-  保存済みの割合をそのまま再適用する
+  通常画面へ戻ったあとの
+  videoWrapperサイズで再配置する
 */
 function restoreStopButtonSize() {
-  applyStopButtonGeometry();
+  scheduleStopButtonGeometryApply();
 }
-
 
 /*
   iPhone用の疑似全画面を開始
@@ -4712,15 +4871,26 @@ document.addEventListener(
       document.fullscreenElement ===
       videoWrapper;
 
-    if (isFullscreen) {
+   if (isFullscreen) {
 
-      updateFullscreenIcon(true);
+  updateFullscreenIcon(true);
 
-    } else {
+  /*
+    全画面化後のvideoWrapperサイズで
+    STOPボタンを再配置する
+  */
+  scheduleStopButtonGeometryApply();
 
-      restoreStopButtonSize();
-      updateFullscreenIcon(false);
-    }
+} else {
+
+  updateFullscreenIcon(false);
+
+  /*
+    通常画面へ戻ったあとのサイズで
+    STOPボタンを再配置する
+  */
+  scheduleStopButtonGeometryApply();
+}
 
     hideMobileFullscreenButton();
   }
