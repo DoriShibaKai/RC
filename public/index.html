@@ -1622,21 +1622,7 @@ body.mobilePseudoFullscreenActive {
   }
 }
 
-  /* --- 編集モード時の映像表示 --- */
-.video-paused-overlay {
-    opacity: 0.5; /* 静止画っぽく半透明に */
-    filter: grayscale(30%); /* お好みで少し落ち着いたトーンに */
-    pointer-events: none; /* 映像への操作を無効化 */
-}
 
-/* --- 編集中のSTOPボタン表示 --- */
-.stop-btn-editable {
-    cursor: move; /* ドラッグできるカーソル */
-    outline: 2px dashed #3b82f6; /* 編集状態とわかりやすい枠線 */
-    resize: both; /* 右下でのリサイズを有効化 (CSS標準リサイズ) */
-    overflow: hidden;
-    user-select: none;
-}
 
 </style>
 
@@ -1862,15 +1848,13 @@ body.mobilePseudoFullscreenActive {
               STOPボタン編集
             </button>
 
-            <p
-              class="
-                settingsDescription
-                settingsActionDescription
-              "
-            >
-              映像画面を確認しながら，
-              STOPボタンの位置と大きさを変更します。
-            </p>
+            <span class="
+  settingsDescription
+  settingsActionDescription
+">
+  映像画面を確認しながら，
+  STOPボタンの位置と大きさを変更します。
+</span>
 
           </section>
 
