@@ -705,8 +705,8 @@
     object-fit: contain;
   }
 
-  /* ======================================
-   PC用：映像の全画面ボタン
+ /* ======================================
+   映像の全画面ボタン
 ====================================== */
 
 #pcFullscreenButton {
@@ -749,7 +749,10 @@
 }
 
 
-/* videoWrapperが全画面になったとき */
+/* ======================================
+   本当の全画面表示
+   PCなどの対応ブラウザ
+====================================== */
 
 #videoWrapper:fullscreen {
   width: 100vw;
@@ -770,26 +773,91 @@
   object-fit: contain;
 }
 
-
-/* 全画面中もボタンを右下に固定 */
-
 #videoWrapper:fullscreen #pcFullscreenButton {
   right: 18px;
   bottom: 18px;
 }
 
 
-/* iPhoneなどの狭い画面では，今回は表示しない */
+/* ======================================
+   iPhone用：疑似全画面
+====================================== */
+
+body.mobilePseudoFullscreenActive {
+  overflow: hidden;
+}
+
+#videoWrapper.mobilePseudoFullscreen {
+  position: fixed;
+  inset: 0;
+
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+
+  z-index: 2000;
+
+  border: none;
+  border-radius: 0;
+
+  background: #000000;
+}
+
+#videoWrapper.mobilePseudoFullscreen video {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+
+  border-radius: 0;
+  object-fit: contain;
+}
+
+#videoWrapper.mobilePseudoFullscreen #pcFullscreenButton {
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+
+/* ======================================
+   iPhone・小さい画面
+====================================== */
 
 @media (max-width: 700px) {
+
+  /* 通常は全画面アイコンを隠す */
   #pcFullscreenButton {
     display: none;
+
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+
+    right: 10px;
+    bottom: 10px;
+  }
+
+  /* 右下を3回タップしたときだけ表示 */
+  #pcFullscreenButton.mobileFullscreenVisible {
+    display: flex;
   }
 }
 
-  .hidden {
-    display: none !important;
+
+/* さらに小さい画面 */
+
+@media (max-width: 370px) {
+
+  #pcFullscreenButton {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
+
+    right: 8px;
+    bottom: 8px;
   }
+}
 
   /* ======================================
      映像上のSTOPボタン
@@ -3222,50 +3290,317 @@ stopButton.addEventListener(
   "click",
   disconnectBoth
 );
+
     // ======================================
-// PC用：映像の全画面表示
+// 映像の全画面表示
+// PC・iPhone共通
 // ======================================
+
+const mobileFullscreenMedia =
+  window.matchMedia("(max-width: 700px)");
+
+let mobileFullscreenTapCount = 0;
+let mobileFullscreenLastTapTime = 0;
+
+let mobileFullscreenLastTapX = 0;
+let mobileFullscreenLastTapY = 0;
+
+let mobileFullscreenHideTimer = null;
+
+
+/*
+  右下の三回タップを判定する設定
+*/
+
+const MOBILE_FULLSCREEN_TAP_LIMIT_MS = 700;
+const MOBILE_FULLSCREEN_SAME_PLACE_PX = 55;
+const MOBILE_FULLSCREEN_ZONE_SIZE_PX = 120;
+const MOBILE_FULLSCREEN_VISIBLE_MS = 4000;
+
+
+/*
+  iPhoneなどの画面幅かどうか
+*/
+
+function isMobileFullscreenLayout() {
+  return mobileFullscreenMedia.matches;
+}
+
+
+/*
+  iPhone用の疑似全画面中かどうか
+*/
+
+function isMobilePseudoFullscreen() {
+  return videoWrapper.classList.contains(
+    "mobilePseudoFullscreen"
+  );
+}
+
+
+/*
+  全画面アイコンの表示を更新
+*/
+
+function updateFullscreenIcon(isFullscreen) {
+
+  if (isFullscreen) {
+
+    pcFullscreenButton.title =
+      "全画面表示を終了";
+
+    pcFullscreenButton.setAttribute(
+      "aria-label",
+      "全画面表示を終了"
+    );
+
+    pcFullscreenIcon.innerHTML = `
+      <path
+        d="
+          M9 4V9H4
+          M20 9H15V4
+          M15 20V15H20
+          M4 15H9V20
+        "
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      ></path>
+    `;
+
+  } else {
+
+    pcFullscreenButton.title =
+      "全画面表示";
+
+    pcFullscreenButton.setAttribute(
+      "aria-label",
+      "映像を全画面表示"
+    );
+
+    pcFullscreenIcon.innerHTML = `
+      <path
+        d="
+          M4 9V4H9
+          M15 4H20V9
+          M20 15V20H15
+          M9 20H4V15
+        "
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      ></path>
+    `;
+  }
+}
+
+
+/*
+  iPhone用の全画面アイコンを隠す
+*/
+
+function hideMobileFullscreenButton() {
+
+  if (mobileFullscreenHideTimer) {
+    clearTimeout(mobileFullscreenHideTimer);
+    mobileFullscreenHideTimer = null;
+  }
+
+  pcFullscreenButton.classList.remove(
+    "mobileFullscreenVisible"
+  );
+}
+
+
+/*
+  iPhone用の全画面アイコンを数秒だけ表示
+*/
+
+function showMobileFullscreenButton() {
+
+  if (!isMobileFullscreenLayout()) {
+    return;
+  }
+
+  pcFullscreenButton.classList.add(
+    "mobileFullscreenVisible"
+  );
+
+  if (mobileFullscreenHideTimer) {
+    clearTimeout(mobileFullscreenHideTimer);
+  }
+
+  mobileFullscreenHideTimer = setTimeout(
+    hideMobileFullscreenButton,
+    MOBILE_FULLSCREEN_VISIBLE_MS
+  );
+}
+
+
+/*
+  全画面へ入る直前のSTOPボタンの
+  実際の大きさを固定する
+*/
+
+function preserveStopButtonSize() {
+
+  const stopButtonRect =
+    driveStopButton.getBoundingClientRect();
+
+  driveStopButton.style.width =
+    `${stopButtonRect.width}px`;
+
+  driveStopButton.style.height =
+    `${stopButtonRect.height}px`;
+}
+
+
+/*
+  STOPボタンの大きさを
+  通常表示の割合指定へ戻す
+*/
+
+function restoreStopButtonSize() {
+  driveStopButton.style.width = "";
+  driveStopButton.style.height = "";
+}
+
+
+/*
+  iPhone用の疑似全画面を開始
+*/
+
+function enterMobilePseudoFullscreen() {
+
+  preserveStopButtonSize();
+
+  videoWrapper.classList.add(
+    "mobilePseudoFullscreen"
+  );
+
+  document.body.classList.add(
+    "mobilePseudoFullscreenActive"
+  );
+
+  updateFullscreenIcon(true);
+}
+
+
+/*
+  iPhone用の疑似全画面を終了
+*/
+
+function exitMobilePseudoFullscreen() {
+
+  videoWrapper.classList.remove(
+    "mobilePseudoFullscreen"
+  );
+
+  document.body.classList.remove(
+    "mobilePseudoFullscreenActive"
+  );
+
+  restoreStopButtonSize();
+  updateFullscreenIcon(false);
+}
+
+
+/*
+  全画面と通常表示を切り替える
+*/
 
 async function togglePcFullscreen() {
 
   try {
 
-    // すでに映像枠が全画面なら，元へ戻す
+    /*
+      iPhone用の疑似全画面から戻す
+    */
+
+    if (isMobilePseudoFullscreen()) {
+      exitMobilePseudoFullscreen();
+      hideMobileFullscreenButton();
+      return;
+    }
+
+
+    /*
+      本当の全画面表示中なら戻す
+    */
+
     if (
       document.fullscreenElement ===
       videoWrapper
     ) {
       await document.exitFullscreen();
+      hideMobileFullscreenButton();
       return;
     }
 
-    // 別の要素が全画面なら，いったん終了
+
+    /*
+      別の要素が全画面なら終了する
+    */
+
     if (document.fullscreenElement) {
       await document.exitFullscreen();
     }
 
-    // 全画面になる直前のSTOPボタンの
-    // 実際の幅と高さを取得する
-    const stopButtonRect =
-      driveStopButton.getBoundingClientRect();
 
-    // 全画面中に大きくならないよう，
-    // 現在の大きさをピクセルで固定する
-    driveStopButton.style.width =
-      `${stopButtonRect.width}px`;
+    /*
+      全画面になる直前の
+      STOPボタンの大きさを保存
+    */
 
-    driveStopButton.style.height =
-      `${stopButtonRect.height}px`;
+    preserveStopButtonSize();
 
-    // 映像枠全体を全画面にする
+
+    /*
+      iPhoneなどの小さい画面では，
+      まず本当の全画面を試す
+    */
+
+    if (isMobileFullscreenLayout()) {
+
+      try {
+
+        if (videoWrapper.requestFullscreen) {
+          await videoWrapper.requestFullscreen();
+        } else {
+          throw new Error(
+            "Fullscreen APIを使用できません。"
+          );
+        }
+
+      } catch (error) {
+
+        /*
+          iPhoneではFullscreen APIが使えないため，
+          疑似全画面へ切り替える
+        */
+
+        restoreStopButtonSize();
+        enterMobilePseudoFullscreen();
+      }
+
+      hideMobileFullscreenButton();
+      return;
+    }
+
+
+    /*
+      PCでは本当の全画面表示
+    */
+
     await videoWrapper.requestFullscreen();
 
   } catch (error) {
 
-    // 全画面に失敗した場合は，
-    // 固定した大きさを元に戻す
-    driveStopButton.style.width = "";
-    driveStopButton.style.height = "";
+    restoreStopButtonSize();
 
     console.error(
       "全画面表示の切り替えに失敗しました。",
@@ -3279,8 +3614,10 @@ async function togglePcFullscreen() {
 }
 
 
-// 全画面ボタンを押したとき，
-// 背後のジョイスティック操作を発生させない
+/*
+  全画面ボタンを押したとき，
+  背後のジョイスティック操作を発生させない
+*/
 
 pcFullscreenButton.addEventListener(
   "pointerdown",
@@ -3289,16 +3626,145 @@ pcFullscreenButton.addEventListener(
   }
 );
 
+
 pcFullscreenButton.addEventListener(
   "click",
   event => {
+
     event.stopPropagation();
+
     togglePcFullscreen();
   }
 );
 
 
-// 全画面と通常表示でアイコンを切り替える
+/*
+  iPhone・小さい画面で，
+  映像右下の同じ場所を3回タップすると
+  全画面アイコンを表示する
+*/
+
+videoWrapper.addEventListener(
+  "pointerdown",
+  event => {
+
+    if (!isMobileFullscreenLayout()) {
+      return;
+    }
+
+    /*
+      表示された全画面ボタンそのものを
+      押した場合は三回タップ判定をしない
+    */
+
+    if (
+      event.target.closest(
+        "#pcFullscreenButton"
+      )
+    ) {
+      return;
+    }
+
+    const rect =
+      videoWrapper.getBoundingClientRect();
+
+    const pointerX =
+      event.clientX - rect.left;
+
+    const pointerY =
+      event.clientY - rect.top;
+
+
+    /*
+      映像の右下120px四方だけを
+      三回タップの対象にする
+    */
+
+    const insideBottomRight =
+      pointerX >=
+        rect.width -
+        MOBILE_FULLSCREEN_ZONE_SIZE_PX &&
+      pointerY >=
+        rect.height -
+        MOBILE_FULLSCREEN_ZONE_SIZE_PX;
+
+    if (!insideBottomRight) {
+
+      mobileFullscreenTapCount = 0;
+      return;
+    }
+
+
+    /*
+      この右下部分では，
+      ジョイスティックを作動させない
+    */
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const now = performance.now();
+
+    const timeFromLastTap =
+      now - mobileFullscreenLastTapTime;
+
+    const distanceFromLastTap =
+      Math.hypot(
+        event.clientX -
+          mobileFullscreenLastTapX,
+
+        event.clientY -
+          mobileFullscreenLastTapY
+      );
+
+    const sameTapSeries =
+      timeFromLastTap <=
+        MOBILE_FULLSCREEN_TAP_LIMIT_MS &&
+      distanceFromLastTap <=
+        MOBILE_FULLSCREEN_SAME_PLACE_PX;
+
+
+    if (sameTapSeries) {
+      mobileFullscreenTapCount += 1;
+    } else {
+      mobileFullscreenTapCount = 1;
+    }
+
+
+    mobileFullscreenLastTapTime = now;
+    mobileFullscreenLastTapX =
+      event.clientX;
+
+    mobileFullscreenLastTapY =
+      event.clientY;
+
+
+    /*
+      三回タップされたら，
+      アイコンを4秒間表示する
+    */
+
+    if (mobileFullscreenTapCount >= 3) {
+
+      mobileFullscreenTapCount = 0;
+
+      showMobileFullscreenButton();
+    }
+
+  },
+
+  /*
+    ジョイスティックのpointerdownより先に
+    この処理を実行する
+  */
+
+  true
+);
+
+
+/*
+  本当の全画面表示が変化したとき
+*/
 
 document.addEventListener(
   "fullscreenchange",
@@ -3310,61 +3776,15 @@ document.addEventListener(
 
     if (isFullscreen) {
 
-      pcFullscreenButton.title =
-        "全画面表示を終了";
-
-      pcFullscreenButton.setAttribute(
-        "aria-label",
-        "全画面表示を終了"
-      );
-
-      pcFullscreenIcon.innerHTML = `
-        <path
-          d="
-            M9 4V9H4
-            M20 9H15V4
-            M15 20V15H20
-            M4 15H9V20
-          "
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        ></path>
-      `;
+      updateFullscreenIcon(true);
 
     } else {
 
-       // 全画面を終了したので，
-      // STOPボタンを通常時の割合指定へ戻す
-      driveStopButton.style.width = "";
-      driveStopButton.style.height = "";
-
-      pcFullscreenButton.title =
-        "全画面表示";
-
-      pcFullscreenButton.setAttribute(
-        "aria-label",
-        "映像を全画面表示"
-      );
-
-      pcFullscreenIcon.innerHTML = `
-        <path
-          d="
-            M4 9V4H9
-            M15 4H20V9
-            M20 15V20H15
-            M9 20H4V15
-          "
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        ></path>
-      `;
+      restoreStopButtonSize();
+      updateFullscreenIcon(false);
     }
+
+    hideMobileFullscreenButton();
   }
 );
 
