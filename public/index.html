@@ -440,7 +440,7 @@
   .note {
     margin: 11px 1px 0;
     color: var(--text-sub);
-    font-size: 12px;
+    font-size: 15px;
     line-height: 1.55;
   }
 
@@ -1263,6 +1263,154 @@ body.mobilePseudoFullscreenActive {
   background: rgba(3, 11, 27, 0.72);
 }
 
+  /* ======================================
+   詳細設定内の機能グループ
+====================================== */
+
+.settingsGroup {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.settingsGroup + .settingsGroup {
+  margin-top: 7px;
+}
+
+
+/* STOP設定・背景設定の見出し */
+.settingsGroupTitle {
+  margin: 0 0 8px;
+  padding: 0 3px;
+
+  color: #eef3ff;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+
+
+/* 同じ設定グループ内のカード */
+.settingsGroupCards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+
+/* グループ下の補足 */
+.settingsGroupNote {
+  margin: 7px 4px 0;
+
+  color: #8998b6;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+
+/* ======================================
+   背景設定のトグル
+====================================== */
+
+.themeToggleControl {
+  grid-column: 3;
+  grid-row: 1 / 3;
+
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  gap: 10px;
+
+  margin: 0;
+  cursor: pointer;
+}
+
+
+/* 実際のチェックボックスを画面外へ隠す */
+.themeToggleControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+/* トグル本体 */
+.themeToggleSwitch {
+  position: relative;
+
+  display: block;
+  width: 54px;
+  height: 30px;
+  flex-shrink: 0;
+
+  border: 1px solid rgba(160, 182, 225, 0.36);
+  border-radius: 999px;
+
+  background: #273958;
+
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+
+/* トグルの丸 */
+.themeToggleSwitch::after {
+  content: "";
+
+  position: absolute;
+  left: 3px;
+  top: 3px;
+
+  width: 22px;
+  height: 22px;
+
+  border-radius: 50%;
+  background: #ffffff;
+
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.32);
+
+  transition: transform 0.2s;
+}
+
+
+/* 将来ONになったときの見た目 */
+.themeToggleControl input:checked +
+.themeToggleSwitch {
+  border-color: rgba(103, 141, 255, 0.8);
+  background: #5265ed;
+}
+
+.themeToggleControl input:checked +
+.themeToggleSwitch::after {
+  transform: translateX(24px);
+}
+
+
+/* ダークなどの表示文字 */
+.themeToggleText {
+  min-width: 52px;
+
+  color: #e8efff;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+
+/* 今は準備中なので少し薄く表示 */
+.themeToggleControl:has(input:disabled) {
+  cursor: default;
+  opacity: 0.58;
+}
+
 /* 3つのカード共通 */
 .settingsSection {
   position: relative;
@@ -1318,14 +1466,8 @@ body.mobilePseudoFullscreenActive {
 }
 
 /* STOPボタン */
-.settingsSection:nth-child(1)::before {
-  content: "□";
-  background: rgba(145, 40, 67, 0.28);
-  color: #ff6e88;
-}
-
 /* パソコン */
-.settingsSection:nth-child(2)::before {
+.pcSettingsSection::before {
   content: "⌨";
   background: rgba(34, 125, 80, 0.25);
   color: #66e59a;
@@ -1333,10 +1475,18 @@ body.mobilePseudoFullscreenActive {
 }
 
 /* iPhone */
-.settingsSection:nth-child(3)::before {
+.iphoneSettingsSection::before {
   content: "♢";
   background: rgba(117, 57, 152, 0.28);
   color: #d987ff;
+}
+
+/* 背景設定 */
+.backgroundSettingsSection::before {
+  content: "◐";
+  background: rgba(47, 105, 160, 0.28);
+  color: #82c8ff;
+  font-size: 22px;
 }
 
 /* STOPボタン・パソコン・iPhoneのタイトル */
@@ -1363,85 +1513,7 @@ body.mobilePseudoFullscreenActive {
   line-height: 1.45;
 }
 
-/* STOPボタンの説明 */
-.settingsActionDescription {
-  grid-column: 2;
-  grid-row: 2;
-  margin: 0;
-  padding: 0;
-}
 
-/* STOPボタン編集 */
-/* STOPボタン編集 */
-.settingsActionButton {
-  grid-column: 3;
-  grid-row: 1 / 3;
-
-  justify-self: center;
-
-  width: 130px;
-  min-height: 58px;
-  margin: 0;
-  padding: 8px 18px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-
-  border: 1px solid rgba(255, 170, 200, 0.55);
-  border-radius: 13px;
-
-background:
-  linear-gradient(
-    
-    #c5658f 0%,
-    #dc90b2 50%,
-    #c5658f 100%
-  );
-
-
-
-  box-shadow:
-  inset 0 1px 0 rgba(255,255,255,.28),
-  0 8px 18px rgba(90,25,55,.24);
-
- color: #ffffff;
-  font-size: 15px;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
-  line-height: 1.15;
-
-  cursor: pointer;
-
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 7px 16px rgba(74, 9, 36, 0.3);
-
-  transition:
-    transform 0.15s,
-    filter 0.2s,
-    box-shadow 0.2s;
-}
-
-.settingsActionButton:hover {
-  filter: brightness(1.1);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 10px 20px rgba(74, 9, 36, 0.38);
-}
-
-.settingsActionButton:active {
-  transform: scale(0.97);
-}
-
-
-
-.settingsActionButton:hover {
-  filter: brightness(1.13);
-}
 
 /*
   パソコン・iPhoneのlabel自体は箱を作らず、
@@ -1538,15 +1610,15 @@ background:
     font-size: 16px;
   }
 
-  .settingsActionDescription,
-  .settingsField .settingsDescription {
+  .settingsSection > .settingsDescription,
+.settingsField .settingsDescription {
     grid-column: 2;
     grid-row: 2;
     font-size: 13px;
   }
 
-.settingsActionButton,
-.settingsField select {
+.settingsField select,
+.themeToggleControl {
   grid-column: 1 / 3;
   grid-row: 3;
 
@@ -1556,23 +1628,40 @@ background:
   font-size: 14px;
 }
 
-/* iPhoneのSTOPボタン編集だけ */
-.settingsActionButton {
-  width: 120px;
-  justify-self: center;
-
-  background:
-    linear-gradient(
-       #bb5a83 0%,
-    #d07ca2 50%,
-    #bb5a83 100%
-    );
+.settingsGroupTitle {
+  margin-bottom: 6px;
+  padding-left: 2px;
+  font-size: 16px;
 }
 
-/* STOPボタン／編集の改行位置を固定 */
-.settingsActionButton span {
-  display: block;
-  white-space: nowrap;
+.settingsGroupNote {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.themeToggleControl {
+  justify-self: center;
+}
+
+.themeToggleSwitch {
+  width: 52px;
+  height: 29px;
+}
+
+.themeToggleSwitch::after {
+  width: 21px;
+  height: 21px;
+}
+
+.themeToggleControl input:checked +
+.themeToggleSwitch::after {
+  transform: translateX(23px);
+}
+
+.themeToggleText {
+  font-size: 13px;
+}
+
 }
 
 }
@@ -1595,14 +1684,14 @@ background:
   }
 
   /* 詳細設定カード内の説明文 */
-  .settingsActionDescription,
-  .settingsField .settingsDescription {
-    font-size: 12px;
-  }
+ .settingsSection > .settingsDescription,
+.settingsField .settingsDescription {
+  font-size: 12px;
+}
 
 /* STOPボタン編集ボタンとプルダウン */
-.settingsActionButton,
-.settingsField select {
+.settingsField select,
+.themeToggleControl {
   font-size: 13px;
 }
 
@@ -1617,6 +1706,36 @@ background:
     #bb5a83 100%
     );
 }
+.settingsGroupTitle {
+  font-size: 15px;
+}
+
+.settingsGroupNote {
+  font-size: 10px;
+}
+
+.themeToggleSwitch {
+  width: 48px;
+  height: 27px;
+}
+
+.themeToggleSwitch::after {
+  width: 19px;
+  height: 19px;
+}
+
+.themeToggleControl input:checked +
+.themeToggleSwitch::after {
+  transform: translateX(21px);
+}
+
+.themeToggleText {
+  min-width: 46px;
+  font-size: 12px;
+}
+
+}
+  
 }
 
 
@@ -1811,8 +1930,7 @@ background:
 
 
       <p class="note">
-        iPhoneとパソコンで同じ部屋名を使ってください。
-        最初は「home-camera」のままで構いません。
+        通信するデバイスは同じ部屋名を使用
       </p>
 
 
@@ -1820,145 +1938,212 @@ background:
            詳細設定
       ==================================== -->
 
-      <details id="settingsPanel">
+<details id="settingsPanel">
 
-        <summary>
-          <span>詳細設定</span>
-        </summary>
+  <summary>
+    <span>詳細設定</span>
+  </summary>
 
-        <div class="settingsContent">
+  <div class="settingsContent">
 
 
-          <!-- STOPボタン -->
+    <!-- ===================================
+         STOP設定
+    ==================================== -->
 
-          <section class="settingsSection">
+    <section class="settingsGroup">
 
-            <div class="settingsSectionTitle">
-              STOPボタン
-            </div>
+      <h2 class="settingsGroupTitle">
+        STOP設定
+      </h2>
 
-           <button
-              type="button"
-              id="openStopEditorButton"
-              class="settingsActionButton"
+      <div class="settingsGroupCards">
+
+
+        <!-- パソコン設定 -->
+
+        <section
+          class="
+            settingsSection
+            pcSettingsSection
+          "
+        >
+
+          <div class="settingsSectionTitle">
+            パソコン
+          </div>
+
+          <label
+            class="settingsField"
+            for="pcStopKey"
+          >
+
+            <span class="settingsLabel">
+              STOPキー
+            </span>
+
+            <span class="settingsDescription">
+              選択したキーを押してSTOP
+            </span>
+
+            <select id="pcStopKey">
+
+              <option
+                value="Space"
+                selected
+              >
+                Space
+              </option>
+
+              <option value="Escape">
+                Escape
+              </option>
+
+              <option value="Enter">
+                Enter
+              </option>
+
+              <option value="KeyS">
+                S
+              </option>
+
+              <option value="None">
+                使用しない
+              </option>
+
+            </select>
+
+          </label>
+
+        </section>
+
+
+        <!-- iPhone設定 -->
+
+        <section
+          class="
+            settingsSection
+            iphoneSettingsSection
+          "
+        >
+
+          <div class="settingsSectionTitle">
+            iPhone
+          </div>
+
+          <label
+            class="settingsField"
+            for="iphoneStopGesture"
+          >
+
+            <span class="settingsLabel">
+              STOPジェスチャー
+            </span>
+
+            <span class="settingsDescription">
+              3本指で画面スワイプしてSTOP
+            </span>
+
+            <select id="iphoneStopGesture">
+
+              <option
+                value="threeRight"
+                selected
+              >
+                3本指・右スワイプ
+              </option>
+
+              <option value="threeLeft">
+                3本指・左スワイプ
+              </option>
+
+              <option value="threeBoth">
+                3本指・左右どちらでも
+              </option>
+
+              <option value="none">
+                使用しない
+              </option>
+
+            </select>
+
+          </label>
+
+        </section>
+
+      </div>
+
+      <p class="settingsGroupNote">
+        詳細設定を開いている間は，映像上のSTOPボタンを移動・サイズ変更できます。
+      </p>
+
+    </section>
+
+
+    <!-- ===================================
+         背景設定
+    ==================================== -->
+
+    <section class="settingsGroup">
+
+      <h2 class="settingsGroupTitle">
+        背景設定
+      </h2>
+
+      <div class="settingsGroupCards">
+
+        <section
+          class="
+            settingsSection
+            backgroundSettingsSection
+          "
+        >
+
+          <div class="settingsSectionTitle">
+            画面テーマ
+          </div>
+
+          <span class="settingsDescription">
+            ダークモードとホワイトモードを切り替えます
+          </span>
+
+          <!--
+            今は見た目だけ用意する。
+            背景切替機能を作るときにdisabledを削除する。
+          -->
+          <label class="themeToggleControl">
+
+            <input
+              id="themeModeToggle"
+              type="checkbox"
+              disabled
             >
-            <span>STOPボタン</span>
-            <span>編集</span>
-            </button>
 
-            <span class="
-  settingsDescription
-  settingsActionDescription
-">
-  STOPボタンの位置と大きさ変更
-</span>
+            <span
+              class="themeToggleSwitch"
+              aria-hidden="true"
+            ></span>
 
-          </section>
+            <span class="themeToggleText">
+              ダーク
+            </span>
 
+          </label>
 
-          <!-- パソコン設定 -->
+        </section>
 
-          <section class="settingsSection">
+      </div>
 
-            <div class="settingsSectionTitle">
-              パソコン
-            </div>
+      <p class="settingsGroupNote">
+        背景切替機能は今後追加予定です。
+      </p>
 
-            <label
-              class="settingsField"
-              for="pcStopKey"
-            >
-
-              <span class="settingsLabel">
-                STOPキー
-              </span>
-
-              <span class="settingsDescription">
-                選択したキーを押してSTOP
-              </span>
-
-              <select id="pcStopKey">
-
-                <option
-                  value="Space"
-                  selected
-                >
-                  Space
-                </option>
-
-                <option value="Escape">
-                  Escape
-                </option>
-
-                <option value="Enter">
-                  Enter
-                </option>
-
-                <option value="KeyS">
-                  S
-                </option>
-
-                <option value="None">
-                  使用しない
-                </option>
-
-              </select>
-
-            </label>
-
-          </section>
+    </section>
 
 
-          <!-- iPhone設定 -->
+  </div>
 
-          <section class="settingsSection">
-
-            <div class="settingsSectionTitle">
-              iPhone
-            </div>
-
-            <label
-              class="settingsField"
-              for="iphoneStopGesture"
-            >
-
-              <span class="settingsLabel">
-                STOPジェスチャー
-              </span>
-
-              <span class="settingsDescription">
-                3本指で画面スワイプでSTOP
-              </span>
-
-              <select id="iphoneStopGesture">
-
-                <option
-                  value="threeRight"
-                  selected
-                >
-                  3本指・右スワイプ
-                </option>
-
-                <option value="threeLeft">
-                  3本指・左スワイプ
-                </option>
-
-                <option value="threeBoth">
-                  3本指・左右どちらでも
-                </option>
-
-                <option value="none">
-                  使用しない
-                </option>
-
-              </select>
-
-            </label>
-
-          </section>
-
-        </div>
-      </details>
+</details>
 
     </section>
 
@@ -2104,8 +2289,7 @@ const joystickKnob =
     const settingsPanel =
   document.getElementById("settingsPanel");
 
-const openStopEditorButton =
-  document.getElementById("openStopEditorButton");
+
 
 const driveStopButtonText =
   document.getElementById("driveStopButtonText");
@@ -2118,6 +2302,9 @@ const pcStopKey =
 
 const iphoneStopGesture =
   document.getElementById("iphoneStopGesture");
+
+const themeModeToggle =
+  document.getElementById("themeModeToggle");
 
     let joystickCenterX = 0;
 let joystickCenterY = 0;
@@ -3153,28 +3340,44 @@ function stopDrivingForSettings() {
     "詳細設定中です。操縦は一時停止しています。";
 }
 
-   settingsPanel.addEventListener("toggle", () => {
+  settingsPanel.addEventListener(
+  "toggle",
+  async () => {
 
-  if (settingsPanel.open) {
+    if (settingsPanel.open) {
 
-    stopDrivingForSettings();
+      /*
+        詳細設定を開いたら操縦を停止し，
+        STOPボタン編集を開始する
+      */
+      stopDrivingForSettings();
+      startStopButtonEditor();
 
-  } else {
+    } else {
 
-    // 自分側の詳細設定を閉じたため，
-    // 相手側も詳細設定中でなければボタンを戻す
-    updateDriveStopButtonAvailability();
+      /*
+        詳細設定を閉じたら，
+        STOPボタン設定を保存して編集終了
+      */
+      await finishStopButtonEditor();
 
-    if (driveStopped) {
+      /*
+        自分側の詳細設定を閉じたため，
+        相手側も詳細設定中でなければ
+        ボタン状態を戻す
+      */
+      updateDriveStopButtonAvailability();
 
-      sendSettingsState(false);
+      if (driveStopped) {
 
-      driveStatusElement.textContent =
-        "詳細設定を終了しました。「解除」を押すと操縦を再開できます。";
+        sendSettingsState(false);
+
+        driveStatusElement.textContent =
+          "詳細設定を終了しました。「解除」を押すと操縦を再開できます。";
+      }
     }
   }
-
-});
+););
 
 function sendSettingsState(active) {
 
@@ -3965,17 +4168,17 @@ function loadStopButtonGeometry() {
 /*
   STOPボタン編集を開始
 */
+/*
+  詳細設定を開いたとき，
+  STOPボタン編集を開始する
+*/
 function startStopButtonEditor() {
 
+  if (stopEditorActive) {
+    return;
+  }
+
   stopEditorActive = true;
-
-  /*
-    詳細設定は開いたままにする
-  */
-  settingsPanel.open = true;
-
-  openStopEditorButton.textContent =
-    "編集終了";
 
   videoWrapper.classList.add(
     "stopButtonEditing"
@@ -3996,7 +4199,8 @@ function startStopButtonEditor() {
   }
 
   /*
-    編集中はSTOPボタンをドラッグできるようにする
+    編集中はSTOPボタンを
+    ドラッグ・サイズ変更可能にする
   */
   updateDriveStopButtonAvailability();
 
@@ -4008,13 +4212,18 @@ function startStopButtonEditor() {
 /*
   STOPボタン編集を終了
 */
+/*
+  詳細設定を閉じたとき，
+  STOPボタン編集を終了して保存する
+*/
 async function finishStopButtonEditor() {
+
+  if (!stopEditorActive) {
+    return;
+  }
 
   stopEditorActive = false;
   stopEditAction = null;
-
-  openStopEditorButton.textContent =
-    "STOPボタン編集";
 
   videoWrapper.classList.remove(
     "stopButtonEditing"
@@ -4030,8 +4239,11 @@ async function finishStopButtonEditor() {
     videoElement.srcObject
   ) {
     try {
+
       await videoElement.play();
+
     } catch (error) {
+
       console.error(
         "映像を再開できませんでした。",
         error
@@ -4046,20 +4258,7 @@ async function finishStopButtonEditor() {
 }
 
 
-/*
-  「STOPボタン編集」／「編集終了」の切替
-*/
-openStopEditorButton.addEventListener(
-  "click",
-  () => {
 
-    if (stopEditorActive) {
-      finishStopButtonEditor();
-    } else {
-      startStopButtonEditor();
-    }
-  }
-);
 
 
 /*
