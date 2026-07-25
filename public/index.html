@@ -806,6 +806,25 @@ body.mobilePseudoFullscreenActive {
   background: #ffffff;
 }
 
+  /*
+  非常停止中の「解除」ボタン
+  通常のSTOPボタンと赤白を反転する
+*/
+#driveStopButton.driveStoppedAppearance {
+  border-color: #e5363e;
+  background: #ffffff;
+  color: #d92732;
+
+  box-shadow:
+    0 5px 12px rgba(90, 0, 8, 0.22),
+    inset 0 0 0 1px rgba(229, 54, 62, 0.12);
+}
+
+/* 「解除」のときは左側の四角も赤にする */
+#driveStopButton.driveStoppedAppearance::before {
+  background: #d92732;
+}
+
 /* 使用できない状態でも白い四角を薄くしない */
 #driveStopButton:disabled::before {
   opacity: 1;
@@ -2462,6 +2481,10 @@ let stopEditStartHeight = 0;
   driveStopButton.disabled = true;
   driveStopButtonText.textContent = "STOP";
 
+driveStopButton.classList.remove(
+  "driveStoppedAppearance"
+);
+
   stopButton.disabled = false;
 }
 
@@ -3033,6 +3056,10 @@ joystickPointerId = null;
 driveStopped = false;
 
 driveStopButtonText.textContent = "STOP";
+
+driveStopButton.classList.remove(
+  "driveStoppedAppearance"
+);
 joystickArea.style.display = "none";
 cancelMobileFullscreenHold();
 hideMobileFullscreenButton();
@@ -3191,6 +3218,15 @@ videoWrapper.addEventListener(
 
 function applyDriveStopState(stopped) {
   driveStopped = stopped;
+
+  /*
+    非常停止中は，
+    白地・赤文字の「解除」表示に切り替える
+  */
+  driveStopButton.classList.toggle(
+    "driveStoppedAppearance",
+    stopped
+  );
 
   /*
     操縦中・ジョイスティック候補状態を
