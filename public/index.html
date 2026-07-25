@@ -1019,41 +1019,28 @@ body.mobilePseudoFullscreenActive {
     box-shadow: 0 4px 13px rgba(0, 0, 0, 0.35);
   }
 
-  /*
-    右下で長押し判定中。
-    3秒かけて白系から黄色系へ滑らかに変化する。
-  */
 /*
-  右下で長押し判定に入った瞬間の色
+  右下を400ミリ秒以上動かずに押した場合だけ，
+  長押し候補として黄色への変化を開始する
 */
 #joystickArea.fullscreenHoldPending {
-  border-color: rgba(255, 224, 120, 0.95);
-  background: rgba(255, 225, 140, 0.32);
-  box-shadow:
-    0 0 0 8px rgba(255, 218, 90, 0.14),
-    0 0 18px rgba(255, 218, 90, 0.32),
-    inset 0 0 25px rgba(255, 245, 195, 0.25);
-
   transition:
-    border-color 2.7s linear,
-    background-color 2.7s linear,
-    box-shadow 2.7s linear;
+    border-color 2.6s linear,
+    background 2.6s linear,
+    box-shadow 2.6s linear;
 }
 
 #joystickArea.fullscreenHoldPending #joystickKnob {
-  border-color: rgba(255, 225, 110, 1);
-  background: rgba(255, 235, 160, 0.95);
-
   transition:
-    border-color 2.7s linear,
-    background-color 2.7s linear;
+    border-color 2.6s linear,
+    background 2.6s linear;
 }
 
 
 /*
-  3秒に近づくにつれて濃い黄色にする
+  長押し候補の最終的な黄色
 */
-#joystickArea.fullscreenHoldProgress {
+#joystickArea.fullscreenHoldPending.fullscreenHoldProgress {
   border-color: rgba(255, 183, 0, 1);
   background: rgba(255, 190, 35, 0.48);
   box-shadow:
@@ -1062,9 +1049,37 @@ body.mobilePseudoFullscreenActive {
     inset 0 0 28px rgba(255, 245, 170, 0.38);
 }
 
-#joystickArea.fullscreenHoldProgress #joystickKnob {
+#joystickArea.fullscreenHoldPending.fullscreenHoldProgress
+#joystickKnob {
   border-color: rgba(255, 174, 0, 1);
   background: rgba(255, 202, 55, 1);
+}
+
+
+/*
+  3秒長押しが成立した瞬間に，
+  一瞬明るくなって勢いよく消える
+*/
+#joystickArea.fullscreenHoldCompleted {
+  pointer-events: none;
+  animation: fullscreenHoldPopOut 0.18s ease-out forwards;
+}
+
+@keyframes fullscreenHoldPopOut {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  35% {
+    opacity: 1;
+    filter: brightness(1.8);
+  }
+
+  100% {
+    opacity: 0;
+    filter: brightness(1.2);
+  }
 }
 
   /* ======================================
@@ -3103,63 +3118,76 @@ videoWrapper.addEventListener(
     joystickArea.style.top =
       joystickCenterY + "px";
 
-    joystickArea.style.display = "block";
-    joystickArea.classList.remove(
-  "fullscreenHoldPending",
-  "fullscreenHoldProgress"
-);
+joystickArea.style.display = "block";
 
-    /* 以前の長押しタイマーを確実に停止する */
-    if (mobileFullscreenHoldTimer) {
-      clearTimeout(mobileFullscreenHoldTimer);
-      mobileFullscreenHoldTimer = null;
-    }
-
-    /*
-      右下で始めた場合だけ，3秒静止の判定を開始する。
-      動いた場合はpointermove側でこのタイマーを中止する。
-    */
-    if (insideFullscreenHoldZone) {
-      const holdPointerId = event.pointerId;
-
-      /* 長押し判定中であることを色の変化で知らせる */
-      /*
-  まず薄い黄色を表示する。
-  さらに次の描画で濃い黄色への変化を開始する。
-*/
 joystickArea.classList.remove(
   "fullscreenHoldPending",
-  "fullscreenHoldProgress"
+  "fullscreenHoldProgress",
+  "fullscreenHoldCompleted"
 );
 
-requestAnimationFrame(() => {
+joystickArea.style.opacity = "1";
+joystickArea.style.filter = "";
 
-  if (joystickPointerId !== holdPointerId) {
-    return;
-  }
 
-  joystickArea.classList.add(
-    "fullscreenHoldPending"
+/*
+  前回の黄色表示タイマーが残っていれば停止する
+*/
+if (mobileFullscreenColorTimer) {
+  clearTimeout(
+    mobileFullscreenColorTimer
   );
 
-  requestAnimationFrame(() => {
+  mobileFullscreenColorTimer = null;
+}
 
-    if (joystickPointerId !== holdPointerId) {
-      return;
-    }
 
-    joystickArea.classList.add(
-      "fullscreenHoldProgress"
-    );
+/*
+  前回の3秒長押しタイマーが残っていれば停止する
+*/
+if (mobileFullscreenHoldTimer) {
+  clearTimeout(
+    mobileFullscreenHoldTimer
+  );
 
-  });
+  mobileFullscreenHoldTimer = null;
+}
 
-});
 
-      mobileFullscreenHoldTimer = setTimeout(
-        () => {
-          mobileFullscreenHoldTimer = null;
+/*
+  右下で押し始めた場合だけ，
+  長押し判定を開始する
+*/
+if (insideFullscreenHoldZone) {
+  const holdPointerId = event.pointerId;
 
+
+  /*
+    400ミリ秒以上動かずに押し続けた場合だけ，
+    黄色への変化を開始する
+  */
+  mobileFullscreenColorTimer = setTimeout(
+    () => {
+      mobileFullscreenColorTimer = null;
+
+      if (
+        joystickPointerId !== holdPointerId ||
+        !joystickCandidate ||
+        joystickActive
+      ) {
+        return;
+      }
+
+      joystickArea.classList.add(
+        "fullscreenHoldPending"
+      );
+
+      /*
+        最初の状態を描画してから，
+        濃い黄色への変化を開始する
+      */
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           if (
             joystickPointerId !== holdPointerId ||
             !joystickCandidate ||
@@ -3168,31 +3196,74 @@ requestAnimationFrame(() => {
             return;
           }
 
-          mobileFullscreenHoldTriggered = true;
-          joystickArea.classList.remove(
-  "fullscreenHoldPending",
-  "fullscreenHoldProgress"
-);
+          joystickArea.classList.add(
+            "fullscreenHoldProgress"
+          );
+        });
+      });
+    },
+    MOBILE_FULLSCREEN_COLOR_DELAY_MS
+  );
 
-          /*
-            対応端末では，長押し成立を短い振動で知らせる。
-            iPhone Safariなど非対応環境では何も起こらない。
-          */
-          if (typeof navigator.vibrate === "function") {
-            navigator.vibrate(45);
-          }
 
-          /* 長押し成立時だけジョイスティックから切り替える */
+  /*
+    合計3秒間動かずに押し続けた場合，
+    全画面アイコンを表示する
+  */
+  mobileFullscreenHoldTimer = setTimeout(
+    () => {
+      mobileFullscreenHoldTimer = null;
+
+      if (
+        joystickPointerId !== holdPointerId ||
+        !joystickCandidate ||
+        joystickActive
+      ) {
+        return;
+      }
+
+      mobileFullscreenHoldTriggered = true;
+
+      /*
+        黄色の状態から，
+        ポンと勢いよく消す
+      */
+      joystickArea.classList.add(
+        "fullscreenHoldCompleted"
+      );
+
+      joystickKnob.style.left = "50%";
+      joystickKnob.style.top = "50%";
+
+      xyDisplay.textContent =
+        "X：0.00　Y：0.00";
+
+
+      /*
+        消えるアニメーション終了後，
+        ジョイスティックを完全に非表示にする
+      */
+      setTimeout(
+        () => {
           joystickArea.style.display = "none";
-          joystickKnob.style.left = "50%";
-          joystickKnob.style.top = "50%";
-          xyDisplay.textContent = "X：0.00　Y：0.00";
+
+          joystickArea.classList.remove(
+            "fullscreenHoldPending",
+            "fullscreenHoldProgress",
+            "fullscreenHoldCompleted"
+          );
+
+          joystickArea.style.opacity = "1";
+          joystickArea.style.filter = "";
 
           showMobileFullscreenButton();
         },
-        MOBILE_FULLSCREEN_HOLD_MS
+        180
       );
-    }
+    },
+    MOBILE_FULLSCREEN_HOLD_MS
+  );
+}
 
     /*
       指が映像領域から少し外れても，
@@ -3527,23 +3598,38 @@ if (command.type === "drive-stop-state") {
 
 
     /*
-      指が12px以上動いたため，
-      3秒長押し判定を中止する
-    */
+  指が12px以上動いたため，
+  黄色表示と3秒長押し判定を中止する
+*/
 
-    if (mobileFullscreenHoldTimer) {
+if (mobileFullscreenColorTimer) {
 
-      clearTimeout(
-        mobileFullscreenHoldTimer
-      );
+  clearTimeout(
+    mobileFullscreenColorTimer
+  );
 
-      mobileFullscreenHoldTimer = null;
-    }
+  mobileFullscreenColorTimer = null;
+}
 
-    joystickArea.classList.remove(
+
+if (mobileFullscreenHoldTimer) {
+
+  clearTimeout(
+    mobileFullscreenHoldTimer
+  );
+
+  mobileFullscreenHoldTimer = null;
+}
+
+
+joystickArea.classList.remove(
   "fullscreenHoldPending",
-  "fullscreenHoldProgress"
+  "fullscreenHoldProgress",
+  "fullscreenHoldCompleted"
 );
+
+joystickArea.style.opacity = "1";
+joystickArea.style.filter = "";
 
     /*
       初めて動いた時点で，
@@ -3661,18 +3747,33 @@ function finishJoystickPointer(
 
 
   /*
-    3秒長押し判定の途中なら，
-    タイマーを停止する
-  */
+  黄色への変化開始前なら，
+  黄色表示タイマーを停止する
+*/
 
-  if (mobileFullscreenHoldTimer) {
+if (mobileFullscreenColorTimer) {
 
-    clearTimeout(
-      mobileFullscreenHoldTimer
-    );
+  clearTimeout(
+    mobileFullscreenColorTimer
+  );
 
-    mobileFullscreenHoldTimer = null;
-  }
+  mobileFullscreenColorTimer = null;
+}
+
+
+/*
+  3秒長押し判定の途中なら，
+  長押しタイマーを停止する
+*/
+
+if (mobileFullscreenHoldTimer) {
+
+  clearTimeout(
+    mobileFullscreenHoldTimer
+  );
+
+  mobileFullscreenHoldTimer = null;
+}
 
 
   const wasDriving = joystickActive;
@@ -3696,9 +3797,13 @@ function finishJoystickPointer(
 
   joystickArea.classList.remove(
   "fullscreenHoldPending",
-  "fullscreenHoldProgress"
+  "fullscreenHoldProgress",
+  "fullscreenHoldCompleted"
 );
-  joystickArea.style.display = "none";
+
+joystickArea.style.opacity = "1";
+joystickArea.style.filter = "";
+joystickArea.style.display = "none";
 
   joystickKnob.style.left = "50%";
   joystickKnob.style.top = "50%";
@@ -3879,6 +3984,11 @@ let mobileFullscreenHoldTriggered = false;
 
 let mobileFullscreenHideTimer = null;
 
+/*
+  黄色への変化を開始するまでのタイマー
+*/
+let mobileFullscreenColorTimer = null;
+
 
 /*
   右下を3秒間押し続けると，
@@ -3886,6 +3996,13 @@ let mobileFullscreenHideTimer = null;
 */
 
 const MOBILE_FULLSCREEN_HOLD_MS = 3000;
+
+/*
+  400ミリ秒以上，ほぼ動かずに押し続けた場合だけ，
+  長押し候補として黄色への変化を開始する
+*/
+const MOBILE_FULLSCREEN_COLOR_DELAY_MS = 400;
+
 const MOBILE_FULLSCREEN_ZONE_SIZE_PX = 120;
 const MOBILE_FULLSCREEN_VISIBLE_MS = 4000;
 
