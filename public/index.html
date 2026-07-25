@@ -827,7 +827,7 @@ body.mobilePseudoFullscreenActive {
    iPhone・小さい画面
 ====================================== */
 
-@media (max-width: 700px) {
+@media (max-width: 700px), (pointer: coarse) {
 
   /* 通常は全画面アイコンを隠す */
   #pcFullscreenButton {
@@ -3304,6 +3304,9 @@ stopButton.addEventListener(
 const mobileFullscreenMedia =
   window.matchMedia("(max-width: 700px)");
 
+const mobileCoarsePointerMedia =
+  window.matchMedia("(pointer: coarse)");
+
 let mobileFullscreenTapCount = 0;
 let mobileFullscreenLastTapTime = 0;
 
@@ -3334,7 +3337,12 @@ let mobileFullscreenLockTimer = null;
 */
 
 function isMobileFullscreenLayout() {
-  return mobileFullscreenMedia.matches;
+
+  return (
+    mobileFullscreenMedia.matches ||
+    mobileCoarsePointerMedia.matches ||
+    navigator.maxTouchPoints > 0
+  );
 }
 
 
@@ -3605,37 +3613,20 @@ async function togglePcFullscreen() {
     preserveStopButtonSize();
 
 
-    /*
-      iPhoneなどの小さい画面では，
-      まず本当の全画面を試す
-    */
+  /*
+  iPhoneなどのタッチ端末では，
+  画面回転でも解除されにくい
+  疑似全画面を直接使用する
+*/
 
-    if (isMobileFullscreenLayout()) {
+if (isMobileFullscreenLayout()) {
 
-      try {
+  enterMobilePseudoFullscreen();
 
-        if (videoWrapper.requestFullscreen) {
-          await videoWrapper.requestFullscreen();
-        } else {
-          throw new Error(
-            "Fullscreen APIを使用できません。"
-          );
-        }
+  hideMobileFullscreenButton();
 
-      } catch (error) {
-
-        /*
-          iPhoneではFullscreen APIが使えないため，
-          疑似全画面へ切り替える
-        */
-
-        restoreStopButtonSize();
-        enterMobilePseudoFullscreen();
-      }
-
-      hideMobileFullscreenButton();
-      return;
-    }
+  return;
+}
 
 
     /*
@@ -3858,6 +3849,111 @@ document.addEventListener(
 
     hideMobileFullscreenButton();
   }
+);
+
+    /*
+  iPhoneを縦向き・横向きに変更したあと，
+  疑似全画面とボタンの状態を整える
+*/
+
+function refreshMobileFullscreenAfterRotation() {
+
+  /*
+    Safariの画面サイズ更新が終わるまで
+    少し待ってから処理する
+  */
+
+  setTimeout(
+    () => {
+
+      if (!isMobileFullscreenLayout()) {
+        return;
+      }
+
+
+      /*
+        三回タップの途中状態をリセットする
+      */
+
+      mobileFullscreenTapCount = 0;
+      mobileFullscreenLastTapTime = 0;
+
+
+      /*
+        ボタンの一時ロックを解除する
+      */
+
+      mobileFullscreenButtonLocked = false;
+
+      if (mobileFullscreenLockTimer) {
+
+        clearTimeout(
+          mobileFullscreenLockTimer
+        );
+
+        mobileFullscreenLockTimer = null;
+      }
+
+      pcFullscreenButton.removeAttribute(
+        "aria-disabled"
+      );
+
+
+      /*
+        疑似全画面中なら，
+        横向きになっても疑似全画面を維持する
+      */
+
+      if (isMobilePseudoFullscreen()) {
+
+        videoWrapper.classList.add(
+          "mobilePseudoFullscreen"
+        );
+
+        document.body.classList.add(
+          "mobilePseudoFullscreenActive"
+        );
+
+        updateFullscreenIcon(true);
+
+        /*
+          回転直後にアイコンが
+          出っぱなしになるのを防ぐ
+        */
+
+        hideMobileFullscreenButton();
+
+        return;
+      }
+
+
+      /*
+        通常表示中も，
+        アイコンを出しっぱなしにしない
+      */
+
+      updateFullscreenIcon(false);
+      hideMobileFullscreenButton();
+    },
+    350
+  );
+}
+
+
+window.addEventListener(
+  "orientationchange",
+  refreshMobileFullscreenAfterRotation
+);
+
+
+/*
+  iPhone Safariではorientationchange以外に，
+  resizeだけが発生する場合もある
+*/
+
+window.addEventListener(
+  "resize",
+  refreshMobileFullscreenAfterRotation
 );
 
     window.addEventListener("beforeunload", () => {
