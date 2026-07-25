@@ -1635,11 +1635,7 @@ body.mobilePseudoFullscreenActive {
   margin-top: 0;
 }
 
-  min-height: 40px;
-  margin-top: 7px;
-  border-radius: 9px;
-  font-size: 14px;
-}
+  
 
 .settingsGroupTitle {
   margin-bottom: 6px;
@@ -1652,9 +1648,7 @@ body.mobilePseudoFullscreenActive {
   font-size: 11px;
 }
 
-.themeToggleControl {
-  justify-self: center;
-}
+
 
 .themeToggleSwitch {
   width: 52px;
@@ -4295,10 +4289,7 @@ driveStopButton.addEventListener(
     stopEditStartX = event.clientX;
     stopEditStartY = event.clientY;
 
-    const wrapperRect =
-      videoWrapper.getBoundingClientRect();
-
-    const wrapperRect =
+const wrapperRect =
   videoWrapper.getBoundingClientRect();
 
 const buttonRect =
@@ -4310,13 +4301,7 @@ stopEditStartLeft =
 stopEditStartTop =
   buttonRect.top - wrapperRect.top;
 
-stopEditStartWidth =
-  buttonRect.width;
-
-stopEditStartHeight =
-  buttonRect.height;
-
-stopResizeHandle.setPointerCapture(
+driveStopButton.setPointerCapture(
   event.pointerId
 );
   }
@@ -4343,14 +4328,23 @@ stopResizeHandle.addEventListener(
     stopEditStartX = event.clientX;
     stopEditStartY = event.clientY;
 
-    const buttonRect =
-      driveStopButton.getBoundingClientRect();
+  const wrapperRect =
+  videoWrapper.getBoundingClientRect();
 
-    stopEditStartWidth =
-      buttonRect.width;
+const buttonRect =
+  driveStopButton.getBoundingClientRect();
 
-    stopEditStartHeight =
-      buttonRect.height;
+stopEditStartLeft =
+  buttonRect.left - wrapperRect.left;
+
+stopEditStartTop =
+  buttonRect.top - wrapperRect.top;
+
+stopEditStartWidth =
+  buttonRect.width;
+
+stopEditStartHeight =
+  buttonRect.height;
 
     stopResizeHandle.setPointerCapture(
       event.pointerId
