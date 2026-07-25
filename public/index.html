@@ -2264,6 +2264,24 @@ body.mobilePseudoFullscreenActive {
 const videoWrapper =
   document.getElementById("videoWrapper");
 
+    /*
+  映像の縦横サイズが確定したときに，
+  STOPボタンの位置を必ず再計算する
+*/
+videoElement.addEventListener(
+  "loadedmetadata",
+  () => {
+    scheduleStopButtonGeometryApply();
+  }
+);
+
+videoElement.addEventListener(
+  "playing",
+  () => {
+    scheduleStopButtonGeometryApply();
+  }
+);
+
 const pcFullscreenButton =
   document.getElementById(
     "pcFullscreenButton"
@@ -2538,10 +2556,22 @@ peerConnection.ontrack = event => {
     videoElement.srcObject = stream;
   }
 
-  videoElement.muted = false;
-  videoElement.classList.remove("hidden");
+ videoElement.muted = false;
+videoElement.classList.remove("hidden");
 
-  videoElement.play().catch(() => {
+/*
+  映像が表示されたあとのvideoWrapperサイズで，
+  STOPボタンを再配置する
+*/
+scheduleStopButtonGeometryApply();
+
+videoElement.play()
+  .then(() => {
+    scheduleStopButtonGeometryApply();
+  })
+  .catch(() => {
+    scheduleStopButtonGeometryApply();
+
     setStatus(
       "映像を受信しました。\n" +
       "再生されない場合は、黒い映像部分を一度押してください。"
@@ -2826,11 +2856,20 @@ if (driveChannel) {
           });
 
         videoElement.srcObject = localStream;
-        videoElement.muted = true;
-        videoElement.classList.remove("hidden");
-        await videoElement.play();
+videoElement.muted = true;
+videoElement.classList.remove("hidden");
 
-        createPeerConnection();
+/*
+  hidden解除直後と再生開始後の両方で，
+  STOPボタンを再配置する
+*/
+scheduleStopButtonGeometryApply();
+
+await videoElement.play();
+
+scheduleStopButtonGeometryApply();
+
+createPeerConnection();
 
         for (const track of localStream.getTracks()) {
           peerConnection.addTrack(track, localStream);
