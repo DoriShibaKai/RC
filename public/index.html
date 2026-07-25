@@ -3099,12 +3099,7 @@ videoWrapper.addEventListener(
   "pointerdown",
   event => {
 
-    if (
-      settingsPanel.open ||
-      stopEditorActive
-    ) {
-      return;
-    }
+   
 
     /*
       STOPボタンや全画面ボタン自体を押した場合は，
@@ -3123,6 +3118,17 @@ videoWrapper.addEventListener(
       iPhoneの右下長押し判定を開始できる。
     */
     startMobileFullscreenHold(event);
+
+    /*
+  詳細設定中でも全画面長押しは有効にする。
+  ただし，ジョイスティック操作は開始しない。
+*/
+if (
+  settingsPanel.open ||
+  stopEditorActive
+) {
+  return;
+}
 
     /*
       ジョイスティックは受信側だけで使用する。
