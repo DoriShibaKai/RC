@@ -632,6 +632,19 @@
   bottom: 18px;
 }
 
+  /*
+  PC全画面でも，通常画面と同じSTOPボタンサイズを使用
+*/
+#videoWrapper:fullscreen #driveStopButton {
+  left: var(--stop-button-left) !important;
+  top: var(--stop-button-top) !important;
+
+  width: var(--stop-button-width) !important;
+  height: var(--stop-button-height) !important;
+
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
 
 /* ======================================
    iPhone用：疑似全画面
@@ -728,13 +741,15 @@ body.mobilePseudoFullscreenActive {
 
   #driveStopButton {
   position: absolute;
-  left: 68%;
-  top: 4%;
 
-  width: 28%;
-  height: 15%;
-  min-width: 100px;
-  min-height: 52px;
+  left: var(--stop-button-left, 68%);
+  top: var(--stop-button-top, 4%);
+
+  width: var(--stop-button-width, 180px);
+  height: var(--stop-button-height, 72px);
+
+  min-width: 0;
+  min-height: 0;
 
   margin: 0;
   padding: 8px 15px;
@@ -3809,17 +3824,38 @@ function applyStopButtonGeometry() {
       1
     );
 
-  driveStopButton.style.left =
-    `${leftPx}px`;
+  /*
+  通常画面・全画面の両方へ，
+  同じ位置とpxサイズをCSS変数として反映する
+*/
+videoWrapper.style.setProperty(
+  "--stop-button-left",
+  `${leftPx}px`
+);
 
-  driveStopButton.style.top =
-    `${topPx}px`;
+videoWrapper.style.setProperty(
+  "--stop-button-top",
+  `${topPx}px`
+);
 
-  driveStopButton.style.width =
-    `${widthPx}px`;
+videoWrapper.style.setProperty(
+  "--stop-button-width",
+  `${widthPx}px`
+);
 
-  driveStopButton.style.height =
-    `${heightPx}px`;
+videoWrapper.style.setProperty(
+  "--stop-button-height",
+  `${heightPx}px`
+);
+
+
+/*
+  以前の直接指定が残っている場合に備えて解除する
+*/
+driveStopButton.style.removeProperty("left");
+driveStopButton.style.removeProperty("top");
+driveStopButton.style.removeProperty("width");
+driveStopButton.style.removeProperty("height");
 }
 
 
