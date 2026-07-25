@@ -2548,7 +2548,7 @@ let stopEditStartHeight = 0;
       console.log(message);
     }
 
-  function setControlsConnected() {
+function setControlsConnected() {
   sendButton.disabled = true;
   viewButton.disabled = true;
   roomInput.disabled = true;
@@ -2560,24 +2560,28 @@ let stopEditStartHeight = 0;
   driveStopButton.disabled = true;
   driveStopButtonText.textContent = "STOP";
 
-driveStopButton.classList.remove(
-  "driveStoppedAppearance"
-);
+  driveStopButton.classList.remove(
+    "driveStoppedAppearance"
+  );
 
   stopButton.disabled = false;
 
-    headerBadgeDot.classList.remove(
-  "connected"
-);
+  headerBadgeDot.classList.add(
+    "connected"
+  );
 }
 
-    function setControlsDisconnected() {
-      sendButton.disabled = false;
-      viewButton.disabled = false;
-      roomInput.disabled = false;
-      driveStopButton.disabled = true;
-      stopButton.disabled = true;
-    }
+  function setControlsDisconnected() {
+  sendButton.disabled = false;
+  viewButton.disabled = false;
+  roomInput.disabled = false;
+  driveStopButton.disabled = true;
+  stopButton.disabled = true;
+
+  headerBadgeDot.classList.remove(
+    "connected"
+  );
+}
 
     function getRoomName() {
       const roomName = roomInput.value.trim();
