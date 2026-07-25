@@ -446,171 +446,6 @@
     line-height: 1.55;
   }
 
-  /* ======================================
-     詳細設定
-  ====================================== */
-
-  #settingsPanel {
-    margin-top: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(140, 168, 220, 0.21);
-    border-radius: 12px;
-    background: rgba(14, 27, 52, 0.82);
-  }
-
-
-
-  #settingsPanel summary::-webkit-details-marker {
-    display: none;
-  }
-
-  #settingsPanel summary::before {
-    content: "";
-    width: 18px;
-    height: 18px;
-    margin-right: 10px;
-    background:
-      linear-gradient(#9eb3dc, #9eb3dc) 2px 5px / 14px 2px no-repeat,
-      linear-gradient(#9eb3dc, #9eb3dc) 2px 11px / 14px 2px no-repeat,
-      radial-gradient(circle, #ffffff 0 2px, transparent 2.5px)
-        5px 6px / 6px 6px no-repeat,
-      radial-gradient(circle, #ffffff 0 2px, transparent 2.5px)
-        10px 12px / 6px 6px no-repeat;
-  }
-
-  #settingsPanel summary::after {
-    content: "›";
-    margin-left: auto;
-    color: #aebdde;
-    font-size: 25px;
-    font-weight: normal;
-    line-height: 1;
-    transition: transform 0.2s;
-  }
-
-  #settingsPanel[open] summary {
-    border-bottom: 1px solid rgba(140, 168, 220, 0.17);
-    background: rgba(34, 56, 98, 0.72);
-  }
-
-  #settingsPanel[open] summary::after {
-    transform: rotate(90deg);
-  }
-
-  .settingsContent {
-    padding: 11px;
-    background: rgba(4, 13, 30, 0.5);
-  }
-
-  .settingsSection {
-    margin-bottom: 10px;
-    padding: 13px;
-    overflow: hidden;
-    border: 1px solid rgba(140, 168, 220, 0.17);
-    border-radius: 10px;
-    background: rgba(18, 33, 61, 0.88);
-  }
-
-  .settingsSection:last-child {
-    margin-bottom: 0;
-  }
-
-  .settingsSectionTitle {
-    margin: -13px -13px 12px;
-    padding: 9px 13px;
-    border-bottom: 1px solid rgba(105, 145, 220, 0.18);
-    background: rgba(35, 62, 111, 0.68);
-    color: #cfe0ff;
-    font-size: 15px;
-    font-weight: bold;
-  }
-
-  .settingsToggleRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    cursor: pointer;
-  }
-
-  .settingsToggleRow input[type="checkbox"] {
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    margin: 0;
-    cursor: pointer;
-  }
-
-  .settingsText {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .settingsField {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin: 0;
-  }
-
-  .settingsLabel {
-    color: #f0f5ff;
-    font-size: 15px;
-    font-weight: bold;
-  }
-
-  .settingsDescription {
-    color: #9eadc8;
-    font-size: 12px;
-    line-height: 1.5;
-  }
-
-  .settingsField select {
-    width: 100%;
-    min-height: 44px;
-    margin-top: 5px;
-    padding: 8px 36px 8px 11px;
-    border: 1px solid rgba(151, 177, 225, 0.32);
-    border-radius: 8px;
-    outline: none;
-    background: #0a1730;
-    color: #ffffff;
-    font-size: 15px;
-  }
-
-  .settingsActionButton {
-    width: 100%;
-    min-height: 48px;
-    padding: 10px 12px;
-    border: 1px solid rgba(125, 160, 228, 0.42);
-    border-radius: 9px;
-    background:
-      linear-gradient(
-        145deg,
-        rgba(49, 82, 143, 0.82),
-        rgba(29, 52, 99, 0.9)
-      );
-    color: #ffffff;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-    transition:
-      transform 0.15s,
-      filter 0.2s;
-  }
-
-  .settingsActionButton:hover {
-    filter: brightness(1.12);
-  }
-
-  .settingsActionButton:active {
-    transform: scale(0.98);
-  }
-
-  .settingsActionDescription {
-    margin: 8px 2px 0;
-  }
 
   /* ======================================
      状態表示
@@ -1814,6 +1649,22 @@ body.mobilePseudoFullscreenActive {
   .settingsField select {
     font-size: 13px;
   }
+}
+
+  /* --- 編集モード時の映像表示 --- */
+.video-paused-overlay {
+    opacity: 0.5; /* 静止画っぽく半透明に */
+    filter: grayscale(30%); /* お好みで少し落ち着いたトーンに */
+    pointer-events: none; /* 映像への操作を無効化 */
+}
+
+/* --- 編集中のSTOPボタン表示 --- */
+.stop-btn-editable {
+    cursor: move; /* ドラッグできるカーソル */
+    outline: 2px dashed #3b82f6; /* 編集状態とわかりやすい枠線 */
+    resize: both; /* 右下でのリサイズを有効化 (CSS標準リサイズ) */
+    overflow: hidden;
+    user-select: none;
 }
 
 </style>
