@@ -2614,6 +2614,37 @@ if (driveChannel) {
       }
     }
 
+function disconnectBoth() {
+
+  // WebRTCのDataChannelが開いていれば，
+  // 相手へ「接続を終了する」と直接通知する
+  if (
+    driveChannel &&
+    driveChannel.readyState === "open"
+  ) {
+    const disconnectData = {
+      type: "disconnect-all"
+    };
+
+    driveChannel.send(
+      JSON.stringify(disconnectData)
+    );
+
+    // 送信直後に回線を閉じると命令が届かない場合があるため，
+    // 少し待ってから自分側を終了する
+    setTimeout(() => {
+      stopAll(true);
+    }, 150);
+
+    return;
+  }
+
+  // DataChannelが使えない場合は自分側だけ終了
+  stopAll(true);
+}
+
+
+    
     function stopAll(showMessage = true) {
       role = null;
       offerStarted = false;
@@ -2861,6 +2892,20 @@ function sendSettingsState(active) {
 
     console.log("受信した命令", command);
 
+    // 相手が「接続を終了」を押した場合
+if (command.type === "disconnect-all") {
+
+  // この端末側も終了する
+  stopAll(false);
+
+  setStatus(
+    "相手側が接続を終了しました。\n" +
+    "この端末側の接続も終了しました。"
+  );
+
+  return;
+}
+
    // 詳細設定の開閉状態を受信した場合
 if (command.type === "settings-state") {
 
@@ -3038,7 +3083,10 @@ driveStopButton.addEventListener(
   toggleDriveStop
 );
     
-stopButton.addEventListener("click", () => stopAll(true));
+stopButton.addEventListener(
+  "click",
+  disconnectBoth
+);
 
     window.addEventListener("beforeunload", () => {
       stopAll(false);
