@@ -810,19 +810,31 @@ body.mobilePseudoFullscreenActive {
   非常停止中の「解除」ボタン
   通常のSTOPボタンと赤白を反転する
 */
-#driveStopButton.driveStoppedAppearance {
-  border-color: #e5363e;
-  background: #ffffff;
-  color: #d92732;
+/*
+  STOP中の「解除」表示
+  PC・iPhone・iPhone疑似全画面のすべてに適用
+*/
+#videoWrapper #driveStopButton.driveStoppedAppearance,
+#videoWrapper.mobilePseudoFullscreen
+  #driveStopButton.driveStoppedAppearance,
+#videoWrapper:fullscreen
+  #driveStopButton.driveStoppedAppearance {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+
+  border-color: #e5363e !important;
+  background: #ffffff !important;
+  color: #d92732 !important;
 
   box-shadow:
     0 5px 12px rgba(90, 0, 8, 0.22),
-    inset 0 0 0 1px rgba(229, 54, 62, 0.12);
+    inset 0 0 0 1px rgba(229, 54, 62, 0.12) !important;
 }
 
-/* 「解除」のときは左側の四角も赤にする */
-#driveStopButton.driveStoppedAppearance::before {
-  background: #d92732;
+/* 「解除」の左側の四角も赤 */
+#videoWrapper
+  #driveStopButton.driveStoppedAppearance::before {
+  background: #d92732 !important;
 }
 
 /* 使用できない状態でも白い四角を薄くしない */
