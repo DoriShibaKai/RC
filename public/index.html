@@ -705,6 +705,88 @@
     object-fit: contain;
   }
 
+  /* ======================================
+   PC用：映像の全画面ボタン
+====================================== */
+
+#pcFullscreenButton {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+
+  margin: 0;
+  padding: 0;
+
+  z-index: 40;
+
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 9px;
+
+  background: rgba(0, 0, 0, 0.58);
+  color: #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#pcFullscreenButton:hover {
+  background: rgba(0, 0, 0, 0.78);
+}
+
+#pcFullscreenButton svg {
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+
+
+/* videoWrapperが全画面になったとき */
+
+#videoWrapper:fullscreen {
+  width: 100vw;
+  height: 100vh;
+
+  border: none;
+  border-radius: 0;
+
+  background: #000000;
+}
+
+#videoWrapper:fullscreen video {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+
+  border-radius: 0;
+  object-fit: contain;
+}
+
+
+/* 全画面中もボタンを右下に固定 */
+
+#videoWrapper:fullscreen #pcFullscreenButton {
+  right: 18px;
+  bottom: 18px;
+}
+
+
+/* iPhoneなどの狭い画面では，今回は表示しない */
+
+@media (max-width: 700px) {
+  #pcFullscreenButton {
+    display: none;
+  }
+}
+
   .hidden {
     display: none !important;
   }
@@ -1973,6 +2055,42 @@
 
         </button>
 
+                </button>
+
+
+        <!-- PC用：全画面表示ボタン -->
+        <button
+          id="pcFullscreenButton"
+          type="button"
+          aria-label="映像を全画面表示"
+          title="全画面表示"
+        >
+
+          <svg
+            id="pcFullscreenIcon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="
+                M4 9V4H9
+                M15 4H20V9
+                M20 15V20H15
+                M9 20H4V15
+              "
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>
+          </svg>
+
+        </button>
+
+
+      </div>
+
       </div>
 
     </section>
@@ -2030,10 +2148,27 @@
     const stopButton = document.getElementById("stopButton");
     const statusElement = document.getElementById("status");
     const driveStatusElement = document.getElementById("driveStatus");
-    const videoElement = document.getElementById("video");
-    const videoWrapper = document.getElementById("videoWrapper");
-    const joystickArea = document.getElementById("joystickArea");
-    const joystickKnob = document.getElementById("joystickKnob");
+    const videoElement =
+  document.getElementById("video");
+
+const videoWrapper =
+  document.getElementById("videoWrapper");
+
+const pcFullscreenButton =
+  document.getElementById(
+    "pcFullscreenButton"
+  );
+
+const pcFullscreenIcon =
+  document.getElementById(
+    "pcFullscreenIcon"
+  );
+
+const joystickArea =
+  document.getElementById("joystickArea");
+
+const joystickKnob =
+  document.getElementById("joystickKnob");
 
     const xyDisplay = document.getElementById("xyDisplay");
 
@@ -3086,6 +3221,128 @@ driveStopButton.addEventListener(
 stopButton.addEventListener(
   "click",
   disconnectBoth
+);
+    // ======================================
+// PC用：映像の全画面表示
+// ======================================
+
+async function togglePcFullscreen() {
+
+  try {
+
+    // すでに映像枠が全画面なら，元へ戻す
+    if (
+      document.fullscreenElement ===
+      videoWrapper
+    ) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    // 別の要素が全画面なら，いったん終了
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    }
+
+    // 映像枠全体を全画面にする
+    await videoWrapper.requestFullscreen();
+
+  } catch (error) {
+
+    console.error(
+      "全画面表示の切り替えに失敗しました。",
+      error
+    );
+
+    setStatus(
+      "全画面表示に切り替えられませんでした。"
+    );
+  }
+}
+
+
+// 全画面ボタンを押したとき，
+// 背後のジョイスティック操作を発生させない
+
+pcFullscreenButton.addEventListener(
+  "pointerdown",
+  event => {
+    event.stopPropagation();
+  }
+);
+
+pcFullscreenButton.addEventListener(
+  "click",
+  event => {
+    event.stopPropagation();
+    togglePcFullscreen();
+  }
+);
+
+
+// 全画面と通常表示でアイコンを切り替える
+
+document.addEventListener(
+  "fullscreenchange",
+  () => {
+
+    const isFullscreen =
+      document.fullscreenElement ===
+      videoWrapper;
+
+    if (isFullscreen) {
+
+      pcFullscreenButton.title =
+        "全画面表示を終了";
+
+      pcFullscreenButton.setAttribute(
+        "aria-label",
+        "全画面表示を終了"
+      );
+
+      pcFullscreenIcon.innerHTML = `
+        <path
+          d="
+            M9 4V9H4
+            M20 9H15V4
+            M15 20V15H20
+            M4 15H9V20
+          "
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        ></path>
+      `;
+
+    } else {
+
+      pcFullscreenButton.title =
+        "全画面表示";
+
+      pcFullscreenButton.setAttribute(
+        "aria-label",
+        "映像を全画面表示"
+      );
+
+      pcFullscreenIcon.innerHTML = `
+        <path
+          d="
+            M4 9V4H9
+            M15 4H20V9
+            M20 15V20H15
+            M9 20H4V15
+          "
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        ></path>
+      `;
+    }
+  }
 );
 
     window.addEventListener("beforeunload", () => {
