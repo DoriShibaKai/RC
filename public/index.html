@@ -868,52 +868,96 @@ body.mobilePseudoFullscreenActive {
   }
 
 /*
-  右下を400ミリ秒以上動かずに押した場合だけ，
-  長押し候補として黄色への変化を開始する
+  右下長押し専用のサイン。
+  ジョイスティックとは別の表示として使用する。
 */
-#joystickArea.fullscreenHoldPending {
-  transition:
-    border-color 2.6s linear,
-    background 2.6s linear,
-    box-shadow 2.6s linear;
-}
+#fullscreenHoldIndicator {
+  position: absolute;
+  left: 0;
+  top: 0;
 
-#joystickArea.fullscreenHoldPending #joystickKnob {
-  transition:
-    border-color 2.6s linear,
-    background 2.6s linear;
-}
+  display: none;
+  width: 76px;
+  height: 76px;
+  transform: translate(-50%, -50%);
 
-
-/*
-  長押し候補の最終的な黄色
-*/
-#joystickArea.fullscreenHoldPending.fullscreenHoldProgress {
-  border-color: rgba(255, 183, 0, 1);
-  background: rgba(255, 190, 35, 0.48);
-  box-shadow:
-    0 0 0 10px rgba(255, 190, 0, 0.20),
-    0 0 32px rgba(255, 190, 0, 0.60),
-    inset 0 0 28px rgba(255, 245, 170, 0.38);
-}
-
-#joystickArea.fullscreenHoldPending.fullscreenHoldProgress
-#joystickKnob {
-  border-color: rgba(255, 174, 0, 1);
-  background: rgba(255, 202, 55, 1);
-}
-
-
-/*
-  3秒長押しが成立した瞬間に，
-  一瞬明るくなって勢いよく消える
-*/
-#joystickArea.fullscreenHoldCompleted {
+  z-index: 35;
   pointer-events: none;
-  animation: fullscreenHoldPopOut 0.18s ease-out forwards;
+
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  border: 3px solid rgba(120, 210, 255, 0.95);
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(5, 18, 38, 0.82) 0 52%,
+      rgba(40, 145, 220, 0.32) 53% 100%
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 0 0 5px rgba(60, 170, 255, 0.15),
+    0 0 24px rgba(60, 170, 255, 0.5);
 }
 
-@keyframes fullscreenHoldPopOut {
+#fullscreenHoldIndicator .fullscreenHoldSymbol {
+  font-size: 29px;
+  line-height: 1;
+}
+
+#fullscreenHoldIndicator .fullscreenHoldLabel {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+/*
+  400ミリ秒たつと，3秒成立まで黄色へ変化する。
+*/
+#fullscreenHoldIndicator.fullscreenHoldProgress {
+  display: flex;
+
+  animation:
+    fullscreenHoldProgressColor 2.6s linear forwards;
+}
+
+@keyframes fullscreenHoldProgressColor {
+  0% {
+    border-color: rgba(120, 210, 255, 0.95);
+    box-shadow:
+      0 0 0 5px rgba(60, 170, 255, 0.15),
+      0 0 24px rgba(60, 170, 255, 0.5);
+  }
+
+  100% {
+    border-color: rgba(255, 183, 0, 1);
+    background:
+      radial-gradient(
+        circle,
+        rgba(44, 28, 0, 0.88) 0 52%,
+        rgba(255, 190, 35, 0.5) 53% 100%
+      );
+    box-shadow:
+      0 0 0 8px rgba(255, 190, 0, 0.2),
+      0 0 32px rgba(255, 190, 0, 0.65);
+  }
+}
+
+/*
+  3秒長押しが成立した瞬間の完了表示。
+*/
+#fullscreenHoldIndicator.fullscreenHoldCompleted {
+  display: flex;
+  animation: fullscreenHoldIndicatorPopOut 0.18s ease-out forwards;
+}
+
+@keyframes fullscreenHoldIndicatorPopOut {
   0% {
     opacity: 1;
     filter: brightness(1);
@@ -2182,6 +2226,14 @@ body.mobilePseudoFullscreenActive {
           <div id="joystickKnob"></div>
         </div>
 
+        <div
+          id="fullscreenHoldIndicator"
+          aria-hidden="true"
+        >
+          <div class="fullscreenHoldSymbol">⛶</div>
+          <div class="fullscreenHoldLabel">長押し</div>
+        </div>
+
 
         <button
           id="driveStopButton"
@@ -2299,6 +2351,11 @@ const joystickArea =
 
 const joystickKnob =
   document.getElementById("joystickKnob");
+
+const fullscreenHoldIndicator =
+  document.getElementById(
+    "fullscreenHoldIndicator"
+  );
 
     const xyDisplay = document.getElementById("xyDisplay");
 
@@ -2982,6 +3039,8 @@ driveStopped = false;
 
 driveStopButtonText.textContent = "STOP";
 joystickArea.style.display = "none";
+cancelMobileFullscreenHold();
+hideMobileFullscreenButton();
 
       joystickKnob.style.left = "50%";
       joystickKnob.style.top = "50%";
@@ -2995,13 +3054,18 @@ joystickArea.style.display = "none";
       }
     }
 
+/*
+  映像枠を押したときの処理。
+
+  1. iPhoneなどでは，送信側・受信側のどちらでも
+     右下長押しによる全画面アイコン表示を開始する。
+  2. 受信側だけは，これとは別にジョイスティック候補を開始する。
+*/
 videoWrapper.addEventListener(
   "pointerdown",
   event => {
 
     if (
-      role !== "viewer" ||
-      driveStopped ||
       settingsPanel.open ||
       stopEditorActive
     ) {
@@ -3009,8 +3073,8 @@ videoWrapper.addEventListener(
     }
 
     /*
-      STOPボタンや全画面ボタンを押した場合は，
-      ジョイスティックを作動させない
+      STOPボタンや全画面ボタン自体を押した場合は，
+      長押し判定とジョイスティックを開始しない。
     */
     if (
       event.target.closest(
@@ -3020,15 +3084,27 @@ videoWrapper.addEventListener(
       return;
     }
 
+    /*
+      送信側・受信側のどちらでも，
+      iPhoneの右下長押し判定を開始できる。
+    */
+    startMobileFullscreenHold(event);
+
+    /*
+      ジョイスティックは受信側だけで使用する。
+    */
+    if (
+      role !== "viewer" ||
+      driveStopped
+    ) {
+      return;
+    }
+
     /* すでに別の指を追跡している場合は無視する */
     if (joystickPointerId !== null) {
       return;
     }
 
-    /*
-      iPhone/Safariの長押しによる選択・画像メニューを
-      映像枠内だけで防ぐ
-    */
     if (
       event.pointerType === "touch" ||
       event.pointerType === "pen"
@@ -3044,17 +3120,6 @@ videoWrapper.addEventListener(
 
     const pointerY =
       event.clientY - rect.top;
-
-    /*
-      長押しで全画面アイコンを出せるのは右下120px四方だけ。
-      ただし，この区域も通常のジョイスティック操作は有効。
-    */
-    const insideFullscreenHoldZone =
-      isMobileFullscreenLayout() &&
-      pointerX >=
-        rect.width - MOBILE_FULLSCREEN_ZONE_SIZE_PX &&
-      pointerY >=
-        rect.height - MOBILE_FULLSCREEN_ZONE_SIZE_PX;
 
     /* ジョイスティックの中心位置を映像枠内に収める */
     joystickCenterX = Math.max(
@@ -3079,173 +3144,20 @@ videoWrapper.addEventListener(
 
     joystickCandidate = true;
     joystickActive = false;
-    mobileFullscreenHoldTriggered = false;
 
     joystickKnob.style.left = "50%";
     joystickKnob.style.top = "50%";
+
     xyDisplay.textContent = "X：0.00　Y：0.00";
 
-    /*
-      右下を含む映像枠内の全域で，
-      指を置いた瞬間に同じタイミングで表示する
-    */
     joystickArea.style.left =
       joystickCenterX + "px";
 
     joystickArea.style.top =
       joystickCenterY + "px";
 
-joystickArea.style.display = "block";
+    joystickArea.style.display = "block";
 
-joystickArea.classList.remove(
-  "fullscreenHoldPending",
-  "fullscreenHoldProgress",
-  "fullscreenHoldCompleted"
-);
-
-joystickArea.style.opacity = "1";
-joystickArea.style.filter = "";
-
-
-/*
-  前回の黄色表示タイマーが残っていれば停止する
-*/
-if (mobileFullscreenColorTimer) {
-  clearTimeout(
-    mobileFullscreenColorTimer
-  );
-
-  mobileFullscreenColorTimer = null;
-}
-
-
-/*
-  前回の3秒長押しタイマーが残っていれば停止する
-*/
-if (mobileFullscreenHoldTimer) {
-  clearTimeout(
-    mobileFullscreenHoldTimer
-  );
-
-  mobileFullscreenHoldTimer = null;
-}
-
-
-/*
-  右下で押し始めた場合だけ，
-  長押し判定を開始する
-*/
-if (insideFullscreenHoldZone) {
-  const holdPointerId = event.pointerId;
-
-
-  /*
-    400ミリ秒以上動かずに押し続けた場合だけ，
-    黄色への変化を開始する
-  */
-  mobileFullscreenColorTimer = setTimeout(
-    () => {
-      mobileFullscreenColorTimer = null;
-
-      if (
-        joystickPointerId !== holdPointerId ||
-        !joystickCandidate ||
-        joystickActive
-      ) {
-        return;
-      }
-
-      joystickArea.classList.add(
-        "fullscreenHoldPending"
-      );
-
-      /*
-        最初の状態を描画してから，
-        濃い黄色への変化を開始する
-      */
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (
-            joystickPointerId !== holdPointerId ||
-            !joystickCandidate ||
-            joystickActive
-          ) {
-            return;
-          }
-
-          joystickArea.classList.add(
-            "fullscreenHoldProgress"
-          );
-        });
-      });
-    },
-    MOBILE_FULLSCREEN_COLOR_DELAY_MS
-  );
-
-
-  /*
-    合計3秒間動かずに押し続けた場合，
-    全画面アイコンを表示する
-  */
-  mobileFullscreenHoldTimer = setTimeout(
-    () => {
-      mobileFullscreenHoldTimer = null;
-
-      if (
-        joystickPointerId !== holdPointerId ||
-        !joystickCandidate ||
-        joystickActive
-      ) {
-        return;
-      }
-
-      mobileFullscreenHoldTriggered = true;
-
-      /*
-        黄色の状態から，
-        ポンと勢いよく消す
-      */
-      joystickArea.classList.add(
-        "fullscreenHoldCompleted"
-      );
-
-      joystickKnob.style.left = "50%";
-      joystickKnob.style.top = "50%";
-
-      xyDisplay.textContent =
-        "X：0.00　Y：0.00";
-
-
-      /*
-        消えるアニメーション終了後，
-        ジョイスティックを完全に非表示にする
-      */
-      setTimeout(
-        () => {
-          joystickArea.style.display = "none";
-
-          joystickArea.classList.remove(
-            "fullscreenHoldPending",
-            "fullscreenHoldProgress",
-            "fullscreenHoldCompleted"
-          );
-
-          joystickArea.style.opacity = "1";
-          joystickArea.style.filter = "";
-
-          showMobileFullscreenButton();
-        },
-        180
-      );
-    },
-    MOBILE_FULLSCREEN_HOLD_MS
-  );
-}
-
-    /*
-      指が映像領域から少し外れても，
-      pointermove・pointerupを受け取れるようにする
-    */
     try {
       videoWrapper.setPointerCapture(
         event.pointerId
@@ -3565,16 +3477,6 @@ if (command.type === "drive-stop-state") {
 
 
     /*
-      すでに3秒長押しが成立した後は，
-      指を動かしても操縦を開始しない
-    */
-
-    if (mobileFullscreenHoldTriggered) {
-      return;
-    }
-
-
-    /*
       指を置いた位置から
       どれだけ動いたかを調べる
     */
@@ -3598,40 +3500,6 @@ if (command.type === "drive-stop-state") {
       return;
     }
 
-
-    /*
-  指が12px以上動いたため，
-  黄色表示と3秒長押し判定を中止する
-*/
-
-if (mobileFullscreenColorTimer) {
-
-  clearTimeout(
-    mobileFullscreenColorTimer
-  );
-
-  mobileFullscreenColorTimer = null;
-}
-
-
-if (mobileFullscreenHoldTimer) {
-
-  clearTimeout(
-    mobileFullscreenHoldTimer
-  );
-
-  mobileFullscreenHoldTimer = null;
-}
-
-
-joystickArea.classList.remove(
-  "fullscreenHoldPending",
-  "fullscreenHoldProgress",
-  "fullscreenHoldCompleted"
-);
-
-joystickArea.style.opacity = "1";
-joystickArea.style.filter = "";
 
     /*
       初めて動いた時点で，
@@ -3748,36 +3616,6 @@ function finishJoystickPointer(
   }
 
 
-  /*
-  黄色への変化開始前なら，
-  黄色表示タイマーを停止する
-*/
-
-if (mobileFullscreenColorTimer) {
-
-  clearTimeout(
-    mobileFullscreenColorTimer
-  );
-
-  mobileFullscreenColorTimer = null;
-}
-
-
-/*
-  3秒長押し判定の途中なら，
-  長押しタイマーを停止する
-*/
-
-if (mobileFullscreenHoldTimer) {
-
-  clearTimeout(
-    mobileFullscreenHoldTimer
-  );
-
-  mobileFullscreenHoldTimer = null;
-}
-
-
   const wasDriving = joystickActive;
 
 
@@ -3795,17 +3633,7 @@ if (mobileFullscreenHoldTimer) {
   joystickActive = false;
   joystickPointerId = null;
 
-  mobileFullscreenHoldTriggered = false;
-
-  joystickArea.classList.remove(
-  "fullscreenHoldPending",
-  "fullscreenHoldProgress",
-  "fullscreenHoldCompleted"
-);
-
-joystickArea.style.opacity = "1";
-joystickArea.style.filter = "";
-joystickArea.style.display = "none";
+  joystickArea.style.display = "none";
 
   joystickKnob.style.left = "50%";
   joystickKnob.style.top = "50%";
@@ -4628,18 +4456,17 @@ const mobileCoarsePointerMedia =
   window.matchMedia("(pointer: coarse)");
 
 /*
-  スマートフォンの右下長押し判定
+  スマートフォンの右下長押し判定。
+  ジョイスティックとは独立して管理する。
 */
-
 let mobileFullscreenHoldTimer = null;
+let mobileFullscreenColorTimer = null;
+let mobileFullscreenHoldPointerId = null;
+let mobileFullscreenHoldStartX = 0;
+let mobileFullscreenHoldStartY = 0;
 let mobileFullscreenHoldTriggered = false;
 
 let mobileFullscreenHideTimer = null;
-
-/*
-  黄色への変化を開始するまでのタイマー
-*/
-let mobileFullscreenColorTimer = null;
 
 
 /*
@@ -4677,6 +4504,196 @@ function isMobileFullscreenLayout() {
     navigator.maxTouchPoints > 0
   );
 }
+
+
+/*
+  右下長押し専用サインを消す
+*/
+function hideFullscreenHoldIndicator() {
+  fullscreenHoldIndicator.style.display = "none";
+  fullscreenHoldIndicator.classList.remove(
+    "fullscreenHoldProgress",
+    "fullscreenHoldCompleted"
+  );
+  fullscreenHoldIndicator.style.opacity = "1";
+  fullscreenHoldIndicator.style.filter = "";
+}
+
+
+/*
+  右下長押し判定を中止する
+*/
+function cancelMobileFullscreenHold() {
+  if (mobileFullscreenColorTimer) {
+    clearTimeout(mobileFullscreenColorTimer);
+    mobileFullscreenColorTimer = null;
+  }
+
+  if (mobileFullscreenHoldTimer) {
+    clearTimeout(mobileFullscreenHoldTimer);
+    mobileFullscreenHoldTimer = null;
+  }
+
+  mobileFullscreenHoldPointerId = null;
+  mobileFullscreenHoldTriggered = false;
+  hideFullscreenHoldIndicator();
+}
+
+
+/*
+  送信側・受信側のどちらでも，
+  右下長押しによる全画面アイコン表示を開始する
+*/
+function startMobileFullscreenHold(event) {
+  if (
+    !isMobileFullscreenLayout() ||
+    role === null
+  ) {
+    return;
+  }
+
+  const rect =
+    videoWrapper.getBoundingClientRect();
+
+  const pointerX =
+    event.clientX - rect.left;
+
+  const pointerY =
+    event.clientY - rect.top;
+
+  const insideFullscreenHoldZone =
+    pointerX >=
+      rect.width - MOBILE_FULLSCREEN_ZONE_SIZE_PX &&
+    pointerY >=
+      rect.height - MOBILE_FULLSCREEN_ZONE_SIZE_PX;
+
+  if (!insideFullscreenHoldZone) {
+    return;
+  }
+
+  cancelMobileFullscreenHold();
+
+  mobileFullscreenHoldPointerId =
+    event.pointerId;
+
+  mobileFullscreenHoldStartX =
+    event.clientX;
+
+  mobileFullscreenHoldStartY =
+    event.clientY;
+
+  fullscreenHoldIndicator.style.left =
+    pointerX + "px";
+
+  fullscreenHoldIndicator.style.top =
+    pointerY + "px";
+
+  fullscreenHoldIndicator.style.display =
+    "flex";
+
+  mobileFullscreenColorTimer = setTimeout(
+    () => {
+      mobileFullscreenColorTimer = null;
+
+      if (
+        mobileFullscreenHoldPointerId !==
+          event.pointerId
+      ) {
+        return;
+      }
+
+      fullscreenHoldIndicator.classList.add(
+        "fullscreenHoldProgress"
+      );
+    },
+    MOBILE_FULLSCREEN_COLOR_DELAY_MS
+  );
+
+  mobileFullscreenHoldTimer = setTimeout(
+    () => {
+      mobileFullscreenHoldTimer = null;
+
+      if (
+        mobileFullscreenHoldPointerId !==
+          event.pointerId
+      ) {
+        return;
+      }
+
+      mobileFullscreenHoldTriggered = true;
+
+      fullscreenHoldIndicator.classList.add(
+        "fullscreenHoldCompleted"
+      );
+
+      setTimeout(
+        () => {
+          hideFullscreenHoldIndicator();
+          showMobileFullscreenButton();
+        },
+        180
+      );
+    },
+    MOBILE_FULLSCREEN_HOLD_MS
+  );
+}
+
+
+videoWrapper.addEventListener(
+  "pointermove",
+  event => {
+    if (
+      mobileFullscreenHoldPointerId !==
+        event.pointerId ||
+      mobileFullscreenHoldTriggered
+    ) {
+      return;
+    }
+
+    const movement =
+      Math.hypot(
+        event.clientX -
+          mobileFullscreenHoldStartX,
+        event.clientY -
+          mobileFullscreenHoldStartY
+      );
+
+    if (
+      movement >=
+        JOYSTICK_START_DISTANCE_PX
+    ) {
+      cancelMobileFullscreenHold();
+    }
+  }
+);
+
+
+function finishMobileFullscreenHold(event) {
+  if (
+    mobileFullscreenHoldPointerId !==
+      event.pointerId
+  ) {
+    return;
+  }
+
+  if (!mobileFullscreenHoldTriggered) {
+    cancelMobileFullscreenHold();
+    return;
+  }
+
+  mobileFullscreenHoldPointerId = null;
+}
+
+
+videoWrapper.addEventListener(
+  "pointerup",
+  finishMobileFullscreenHold
+);
+
+videoWrapper.addEventListener(
+  "pointercancel",
+  finishMobileFullscreenHold
+);
 
 
 /*
