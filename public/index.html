@@ -1727,13 +1727,6 @@ body.lightTheme .stopVisibilityState {
   font-size: 21px;
 }
 
-/* iPhone */
-.iphoneSettingsSection::before {
-  content: "♢";
-  background: rgba(117, 57, 152, 0.28);
-  color: #d987ff;
-}
-
 /* 背景設定 */
 .backgroundSettingsSection::before {
   content: "◐";
@@ -2349,60 +2342,6 @@ body.lightTheme #roomName:disabled {
 
         </section>
 
-
-       <!-- スマートフォン・タブレット設定 -->
-
-        <section
-          class="
-            settingsSection
-            iphoneSettingsSection
-          "
-        >
-
-          <div class="settingsSectionTitle">
-            スマートフォン・タブレット
-          </div>
-
-          <label
-            class="settingsField"
-            for="iphoneStopGesture"
-          >
-
-            <span class="settingsLabel">
-              STOPジェスチャー
-            </span>
-
-            <span class="settingsDescription">
-              3本指で画面スワイプしてSTOP
-            </span>
-
-            <select id="iphoneStopGesture">
-
-              <option
-                value="threeRight"
-                selected
-              >
-                3本指・右スワイプ
-              </option>
-
-              <option value="threeLeft">
-                3本指・左スワイプ
-              </option>
-
-              <option value="threeBoth">
-                3本指・左右どちらでも
-              </option>
-
-              <option value="none">
-                使用しない
-              </option>
-
-            </select>
-
-          </label>
-
-        </section>
-
       </div>
 
       <p class="settingsGroupNote">
@@ -2658,9 +2597,6 @@ const stopResizeHandle =
 const pcStopKey =
   document.getElementById("pcStopKey");
 
-const iphoneStopGesture =
-  document.getElementById("iphoneStopGesture");
-
 const stopButtonVisibleToggle =
   document.getElementById(
     "stopButtonVisibleToggle"
@@ -2711,6 +2647,19 @@ const JOYSTICK_START_DISTANCE_PX = 12;
 let driveStopped = false;
 let driveSequence = 0;
 
+/*
+  操縦用DataChannelの通信監視。
+  0.5秒ごとに生存確認を送り，1.5秒間受信がなければ自動STOPする。
+*/
+const DRIVE_HEARTBEAT_INTERVAL_MS = 500;
+const DRIVE_COMMUNICATION_TIMEOUT_MS = 1500;
+const DRIVE_WATCHDOG_CHECK_INTERVAL_MS = 250;
+
+let driveHeartbeatTimer = null;
+let driveWatchdogTimer = null;
+let lastDriveMessageReceivedAt = 0;
+let communicationLossTriggered = false;
+
     let stopEditorActive = false;
 let remoteSettingsActive = false;
 
@@ -2752,6 +2701,89 @@ let stopEditStartHeight = 0;
       statusElement.textContent = message;
       console.log(message);
     }
+
+/*
+  相手からDataChannelのデータを受け取った時刻を更新する。
+  通信が戻っても安全のためSTOP状態は自動解除しない。
+*/
+function markDriveCommunicationReceived() {
+  lastDriveMessageReceivedAt = Date.now();
+  communicationLossTriggered = false;
+}
+
+/*
+  通信途絶を検出した場合の安全停止。
+  一度STOPした後は，利用者が明示的に「解除」を押すまで再開しない。
+*/
+function activateCommunicationLossStop() {
+  if (communicationLossTriggered) {
+    return;
+  }
+
+  communicationLossTriggered = true;
+
+  applyDriveStopState(true);
+  sendStopCommand();
+
+  driveStatusElement.textContent =
+    "通信が一定時間途絶えたため，自動STOPしました。\n" +
+    "通信回復後に「解除」を押してください。";
+}
+
+function stopDriveCommunicationWatchdog() {
+  if (driveHeartbeatTimer !== null) {
+    clearInterval(driveHeartbeatTimer);
+    driveHeartbeatTimer = null;
+  }
+
+  if (driveWatchdogTimer !== null) {
+    clearInterval(driveWatchdogTimer);
+    driveWatchdogTimer = null;
+  }
+
+  lastDriveMessageReceivedAt = 0;
+  communicationLossTriggered = false;
+}
+
+function startDriveCommunicationWatchdog() {
+  stopDriveCommunicationWatchdog();
+
+  lastDriveMessageReceivedAt = Date.now();
+
+  driveHeartbeatTimer = setInterval(() => {
+    if (
+      driveChannel &&
+      driveChannel.readyState === "open"
+    ) {
+      driveChannel.send(
+        JSON.stringify({
+          type: "heartbeat",
+          sentAt: Date.now()
+        })
+      );
+    }
+  }, DRIVE_HEARTBEAT_INTERVAL_MS);
+
+  driveWatchdogTimer = setInterval(() => {
+    if (
+      !driveChannel ||
+      driveChannel.readyState !== "open"
+    ) {
+      activateCommunicationLossStop();
+      return;
+    }
+
+    const silentTime =
+      Date.now() - lastDriveMessageReceivedAt;
+
+    if (
+      silentTime >=
+      DRIVE_COMMUNICATION_TIMEOUT_MS
+    ) {
+      activateCommunicationLossStop();
+    }
+  }, DRIVE_WATCHDOG_CHECK_INTERVAL_MS);
+}
 
 function setControlsConnected() {
   sendButton.disabled = true;
@@ -2827,6 +2859,7 @@ function setControlsConnected() {
   console.log("送り手側の状態", driveChannel.readyState);
 
   driveStopButton.disabled = false;
+  startDriveCommunicationWatchdog();
 
       headerBadgeDot.classList.remove(
     "connecting"
@@ -2848,14 +2881,17 @@ if (settingsPanel.open) {
 
   driveChannel.onclosing = () => {
     console.log("iPhone側 DataChannel closing");
+    activateCommunicationLossStop();
   };
 
   driveChannel.onclose = () => {
     console.log("iPhone側 DataChannel 切断");
+    activateCommunicationLossStop();
   };
 
   driveChannel.onerror = error => {
     console.error("iPhone側 DataChannel error", error);
+    activateCommunicationLossStop();
   };
 
   driveChannel.onmessage = handleDriveChannelMessage;
@@ -2892,6 +2928,7 @@ if (settingsPanel.open) {
   );
 
   driveStopButton.disabled = false;
+  startDriveCommunicationWatchdog();
 
       headerBadgeDot.classList.remove(
     "connecting"
@@ -2921,14 +2958,17 @@ if (driveChannel.readyState === "open") {
 
   driveChannel.onclosing = () => {
     console.log("PC側 DataChannel closing");
+    activateCommunicationLossStop();
   };
 
   driveChannel.onclose = () => {
     console.log("PC側 DataChannel 切断");
+    activateCommunicationLossStop();
   };
 
   driveChannel.onerror = error => {
     console.error("PC側 DataChannel error", error);
+    activateCommunicationLossStop();
   };
 
     driveChannel.onmessage = handleDriveChannelMessage;
@@ -2994,8 +3034,10 @@ if (driveChannel) {
               : "接続成功：iPhoneの映像を受信しています。"
           );
         } else if (state === "disconnected") {
-          setStatus("通信が一時的に切断されました。");
+          activateCommunicationLossStop();
+          setStatus("通信が一時的に切断され，自動STOPしました。");
         } else if (state === "failed") {
+          activateCommunicationLossStop();
           setStatus(
             "WebRTC接続に失敗しました。\n" +
             "いったん接続を終了し、両方でやり直してください。"
@@ -3339,6 +3381,8 @@ function disconnectBoth() {
 
     
     function stopAll(showMessage = true) {
+      stopDriveCommunicationWatchdog();
+
       role = null;
       offerStarted = false;
 
@@ -3346,6 +3390,20 @@ function disconnectBoth() {
         socket.onclose = null;
         socket.close();
         socket = null;
+      }
+
+      if (driveChannel) {
+        driveChannel.onopen = null;
+        driveChannel.onclosing = null;
+        driveChannel.onclose = null;
+        driveChannel.onerror = null;
+        driveChannel.onmessage = null;
+
+        if (driveChannel.readyState !== "closed") {
+          driveChannel.close();
+        }
+
+        driveChannel = null;
       }
 
       if (peerConnection) {
@@ -3733,10 +3791,17 @@ function sendSettingsState(active) {
    function handleDriveChannelMessage(event) {
   console.log("受信", event.data);
 
+  markDriveCommunicationReceived();
+
   try {
     const command = JSON.parse(event.data);
 
     console.log("受信した命令", command);
+
+    // 生存確認だけのメッセージは操縦処理を行わない
+    if (command.type === "heartbeat") {
+      return;
+    }
 
     // 相手が「接続を終了」を押した場合
 if (command.type === "disconnect-all") {
@@ -5755,16 +5820,6 @@ function loadSettings() {
     pcStopKey.value = savedPcKey;
   }
 
-  const savedGesture =
-    localStorage.getItem(
-      "iphoneStopGesture"
-    );
-
-  if (savedGesture !== null) {
-    iphoneStopGesture.value =
-      savedGesture;
-  }
-
   const savedStopButtonVisible =
     localStorage.getItem(
       "stopButtonVisible"
@@ -5789,11 +5844,6 @@ function saveSettings() {
   );
 
   localStorage.setItem(
-    "iphoneStopGesture",
-    iphoneStopGesture.value
-  );
-
-  localStorage.setItem(
     "stopButtonVisible",
     String(stopButtonVisibleToggle.checked)
   );
@@ -5813,11 +5863,6 @@ pcStopKey.addEventListener(
     pcStopKey.blur();
   }
 );
-iphoneStopGesture.addEventListener(
-  "change",
-  saveSettings
-);
-
 stopButtonVisibleToggle.addEventListener(
   "change",
   () => {
