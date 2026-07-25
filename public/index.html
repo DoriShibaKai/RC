@@ -175,13 +175,24 @@
     font-weight: bold;
   }
 
-  .headerBadgeDot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px rgba(98, 223, 131, 0.8);
-  }
+ .headerBadgeDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  background: #8b95a8;
+  box-shadow: none;
+
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+/* WebRTC接続中 */
+.headerBadgeDot.connected {
+  background: #62df83;
+  box-shadow: 0 0 10px rgba(98,223,131,.8);
+}
 
   /* ======================================
      共通パネル
@@ -1819,21 +1830,16 @@ body.mobilePseudoFullscreenActive {
 }
 
 }
-  
-.themeToggleText {
-  min-width: 46px;
-  font-size: 12px;
-}
-
-}
 
 /* ======================================
    ライトモード時の文字と入力欄
 ====================================== */
 
 /* 「接続する部屋名」 */
-body.lightTheme .roomField > label {
-  color: #39465f;
+body.lightTheme #roomNameLabel {
+  color: #344054 !important;
+  -webkit-text-fill-color: #344054 !important;
+  opacity: 1 !important;
   font-weight: 700;
 }
 
@@ -1866,7 +1872,7 @@ body.lightTheme #roomName:disabled {
 </style>
 
 
-</style>
+
 
   
 </head>
@@ -1911,9 +1917,12 @@ body.lightTheme #roomName:disabled {
       <div class="roomRow">
         <div class="roomField">
 
-          <label for="roomName">
-            接続する部屋名
-          </label>
+          <label
+  id="roomNameLabel"
+  for="roomName"
+>
+  接続する部屋名
+</label>
 
           <input
             id="roomName"
@@ -2460,6 +2469,9 @@ const iphoneStopGesture =
 const themeModeToggle =
   document.getElementById("themeModeToggle");
 
+const headerBadgeDot =
+  document.querySelector(".headerBadgeDot");
+
     let joystickCenterX = 0;
 let joystickCenterY = 0;
 
@@ -2553,6 +2565,10 @@ driveStopButton.classList.remove(
 );
 
   stopButton.disabled = false;
+
+    headerBadgeDot.classList.remove(
+  "connected"
+);
 }
 
     function setControlsDisconnected() {
