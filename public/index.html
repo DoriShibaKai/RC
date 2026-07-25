@@ -3927,23 +3927,52 @@ driveStopButton.style.removeProperty("height");
 */
 function scheduleStopButtonGeometryApply() {
 
+  /*
+    直後のレイアウト更新後に再配置する
+  */
   requestAnimationFrame(
     () => {
-
       requestAnimationFrame(
         applyStopButtonGeometry
       );
     }
   );
 
-  setTimeout(
-    applyStopButtonGeometry,
-    100
+  /*
+    iPhoneでは縦横回転後の画面サイズ確定が遅れるため，
+    時間をずらして複数回再配置する
+  */
+  [
+    100,
+    300,
+    600,
+    1000
+  ].forEach(
+    delay => {
+      setTimeout(
+        applyStopButtonGeometry,
+        delay
+      );
+    }
   );
+}
 
-  setTimeout(
-    applyStopButtonGeometry,
-    300
+    /*
+  縦横回転・ブラウザバー・全画面切替などで
+  videoWrapperの大きさが変化した場合，
+  STOPボタンを必ず画面内へ再配置する
+*/
+if (window.ResizeObserver) {
+
+  const stopButtonResizeObserver =
+    new ResizeObserver(
+      () => {
+        scheduleStopButtonGeometryApply();
+      }
+    );
+
+  stopButtonResizeObserver.observe(
+    videoWrapper
   );
 }
 
@@ -5195,92 +5224,87 @@ document.addEventListener(
 function refreshMobileFullscreenAfterRotation() {
 
   /*
-    Safariの画面サイズ更新が終わるまで
-    少し待ってから処理する
+    iPhoneでは縦横回転後に画面サイズが
+    数段階に分かれて更新されるため，
+    時間をずらして何度か整える
   */
+  [
+    100,
+    350,
+    700
+  ].forEach(
+    delay => {
 
-  setTimeout(
-    () => {
+      setTimeout(
+        () => {
 
-      if (!isMobileFullscreenLayout()) {
-        return;
-      }
+          /*
+            長押し途中の処理を中止する
+          */
+          cancelMobileFullscreenHold();
 
+          mobileFullscreenHoldTriggered =
+            false;
 
-     /*
-  長押し判定の途中状態をリセットする
-*/
+          /*
+            全画面ボタンの一時ロックを解除する
+          */
+          mobileFullscreenButtonLocked =
+            false;
 
-if (mobileFullscreenHoldTimer) {
+          if (mobileFullscreenLockTimer) {
 
-  clearTimeout(
-    mobileFullscreenHoldTimer
-  );
+            clearTimeout(
+              mobileFullscreenLockTimer
+            );
 
-  mobileFullscreenHoldTimer = null;
-}
+            mobileFullscreenLockTimer =
+              null;
+          }
 
-mobileFullscreenHoldTriggered = false;
+          pcFullscreenButton.removeAttribute(
+            "aria-disabled"
+          );
 
+          /*
+            疑似全画面中なら，
+            回転後の実際の表示領域へ合わせ直す
+          */
+          if (isMobilePseudoFullscreen()) {
 
-      /*
-        ボタンの一時ロックを解除する
-      */
+            videoWrapper.classList.add(
+              "mobilePseudoFullscreen"
+            );
 
-      mobileFullscreenButtonLocked = false;
+            document.body.classList.add(
+              "mobilePseudoFullscreenActive"
+            );
 
-      if (mobileFullscreenLockTimer) {
+            updateMobilePseudoFullscreenViewport();
 
-        clearTimeout(
-          mobileFullscreenLockTimer
-        );
+            updateFullscreenIcon(true);
 
-        mobileFullscreenLockTimer = null;
-      }
+            hideMobileFullscreenButton();
 
-      pcFullscreenButton.removeAttribute(
-        "aria-disabled"
+          } else {
+
+            /*
+              通常表示中は全画面アイコンを隠す
+            */
+            updateFullscreenIcon(false);
+
+            hideMobileFullscreenButton();
+          }
+
+          /*
+            回転後の新しい映像枠サイズを使って，
+            STOPボタンを画面内へ再配置する
+          */
+          scheduleStopButtonGeometryApply();
+        },
+        delay
       );
-
-
-      /*
-        疑似全画面中なら，
-        横向きになっても疑似全画面を維持する
-      */
-
-    if (isMobilePseudoFullscreen()) {
-
-  videoWrapper.classList.add(
-    "mobilePseudoFullscreen"
-  );
-
-  document.body.classList.add(
-    "mobilePseudoFullscreenActive"
-  );
-
-  /*
-    回転後の実際の表示領域へ合わせ直す
-  */
-
-  updateMobilePseudoFullscreenViewport();
-
-  updateFullscreenIcon(true);
-
-  hideMobileFullscreenButton();
-
-  return;
-}
-
-
-      /*
-        通常表示中も，
-        アイコンを出しっぱなしにしない
-      */
-
-      updateFullscreenIcon(false);
-      hideMobileFullscreenButton();
-    },
-    350
+    }
   );
 }
 
@@ -5315,6 +5339,8 @@ if (window.visualViewport) {
       if (isMobilePseudoFullscreen()) {
         updateMobilePseudoFullscreenViewport();
       }
+
+      scheduleStopButtonGeometryApply();
     }
   );
 
@@ -5325,6 +5351,8 @@ if (window.visualViewport) {
       if (isMobilePseudoFullscreen()) {
         updateMobilePseudoFullscreenViewport();
       }
+
+      scheduleStopButtonGeometryApply();
     }
   );
 }
