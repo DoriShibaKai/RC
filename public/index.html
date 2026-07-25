@@ -1820,7 +1820,46 @@ body.mobilePseudoFullscreenActive {
 
 }
   
+.themeToggleText {
+  min-width: 46px;
+  font-size: 12px;
+}
 
+}
+
+/* ======================================
+   ライトモード時の文字と入力欄
+====================================== */
+
+/* 「接続する部屋名」 */
+body.lightTheme label {
+  color: #44516a;
+}
+
+/* 「通信するデバイスは同じ部屋名を使用」 */
+body.lightTheme .note {
+  color: #64748b;
+}
+
+/* 部屋名入力欄 */
+body.lightTheme #roomName {
+  border-color: #aab3c2;
+  background: #d9dde4;
+  color: #4b5563;
+  -webkit-text-fill-color: #4b5563;
+  opacity: 1;
+}
+
+/* 部屋名入力欄がdisabledのとき */
+body.lightTheme #roomName:disabled {
+  border-color: #aab3c2;
+  background: #d9dde4;
+  color: #4b5563;
+  -webkit-text-fill-color: #4b5563;
+  opacity: 1;
+}
+
+</style>
 
 
 </style>
