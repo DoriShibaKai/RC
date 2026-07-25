@@ -194,6 +194,22 @@
   box-shadow: 0 0 10px rgba(98,223,131,.8);
 }
 
+  /* WebRTC接続中 */
+.headerBadgeDot.connected {
+  background: #62df83;
+  box-shadow: 0 0 10px rgba(98, 223, 131, 0.8);
+}
+
+/* WebRTC接続処理中 */
+.headerBadgeDot.connecting {
+  background: #f3c84b;
+  box-shadow: 0 0 10px rgba(243, 200, 75, 0.8);
+}
+
+/* ======================================
+   共通パネル
+====================================== */
+
   /* ======================================
      共通パネル
   ====================================== */
@@ -2566,8 +2582,13 @@ function setControlsConnected() {
 
   stopButton.disabled = false;
 
-  headerBadgeDot.classList.add(
+  // 接続処理を開始した時点では黄色
+  headerBadgeDot.classList.remove(
     "connected"
+  );
+
+  headerBadgeDot.classList.add(
+    "connecting"
   );
 }
 
@@ -2580,6 +2601,10 @@ function setControlsConnected() {
 
   headerBadgeDot.classList.remove(
     "connected"
+  );
+
+  headerBadgeDot.classList.remove(
+    "connecting"
   );
 }
 
@@ -2613,6 +2638,14 @@ function setControlsConnected() {
   console.log("送り手側の状態", driveChannel.readyState);
 
   driveStopButton.disabled = false;
+
+      headerBadgeDot.classList.remove(
+    "connecting"
+  );
+
+  headerBadgeDot.classList.add(
+    "connected"
+  );
 
   driveStatusElement.textContent =
     "操縦接続が完了しました。\n" +
@@ -2670,6 +2703,14 @@ if (settingsPanel.open) {
   );
 
   driveStopButton.disabled = false;
+
+      headerBadgeDot.classList.remove(
+    "connecting"
+  );
+
+  headerBadgeDot.classList.add(
+    "connected"
+  );
 
   // 接続直後はX=0，Y=0を送る
   sendStopCommand();
