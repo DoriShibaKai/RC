@@ -1,3 +1,57 @@
+
+
+index(6).html
+ファイル
+さっきまでこれでiPhoneなどタップするデバイスは長押しで拡大縮小アイコンがでるようにしてきました。覚えてる？でもうまくいかない。長押ししたら画面全体を選択したことになってしまう。
+
+1m 30s考えました
+覚えています。原因は，長押し開始時点でiPhoneの標準選択動作を止めていなかったことです。
+
+元のコードでは，
+
+contextmenu は防止している
+
+user-select: none もある
+
+ただしSafari用の -webkit-user-select: none が映像全体に十分かかっていない
+
+pointerdown 時点では preventDefault() していない
+
+という状態でした。映像領域にはすでに touch-action: none などがありますが，Safari向けの対策が不足していました。
+
+
+修正版では次を追加しました。
+
+指を置いた瞬間の pointerdown で標準動作を停止
+
+-webkit-user-select: none
+
+selectstart の防止
+
+dragstart の防止
+
+映像を長押しした際の画像ドラッグ防止
+
+index_longpress_fixed.html 
+
+
+
+
+ライブラリ
+/
+index_longpress_fixed.html
+
+
+
+
+
+ライブラリ
+/
+index_longpress_fixed.html
+
+
+
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -700,7 +754,20 @@
     
     touch-action: none;
     -webkit-touch-callout: none;
+    -webkit-user-select: none;
     user-select: none;
+  }
+
+  /* iPhone/Safariの長押しによる文字・画面選択を防ぐ */
+  #videoWrapper,
+  #videoWrapper * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #videoWrapper video {
+    -webkit-user-drag: none;
   }
 
   video {
@@ -2978,6 +3045,17 @@ videoWrapper.addEventListener(
       return;
     }
 
+    /*
+      iPhone/Safariの長押しによる範囲選択や
+      画像メニューを，押し始めた時点で止める
+    */
+    if (
+      event.pointerType === "touch" ||
+      event.pointerType === "pen"
+    ) {
+      event.preventDefault();
+    }
+
 
     const rect =
       videoWrapper.getBoundingClientRect();
@@ -3679,6 +3757,23 @@ videoWrapper.addEventListener(
 
 videoWrapper.addEventListener(
   "contextmenu",
+  event => {
+    event.preventDefault();
+  }
+);
+
+/*
+  Safariの長押しによる範囲選択・ドラッグ開始を防ぐ
+*/
+videoWrapper.addEventListener(
+  "selectstart",
+  event => {
+    event.preventDefault();
+  }
+);
+
+videoWrapper.addEventListener(
+  "dragstart",
   event => {
     event.preventDefault();
   }
