@@ -700,20 +700,7 @@
     
     touch-action: none;
     -webkit-touch-callout: none;
-    -webkit-user-select: none;
     user-select: none;
-  }
-
-  /* iPhone/Safariの長押しによる文字・画面選択を防ぐ */
-  #videoWrapper,
-  #videoWrapper * {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-
-  #videoWrapper video {
-    -webkit-user-drag: none;
   }
 
   video {
@@ -2991,17 +2978,6 @@ videoWrapper.addEventListener(
       return;
     }
 
-    /*
-      iPhone/Safariの長押しによる範囲選択や
-      画像メニューを，押し始めた時点で止める
-    */
-    if (
-      event.pointerType === "touch" ||
-      event.pointerType === "pen"
-    ) {
-      event.preventDefault();
-    }
-
 
     const rect =
       videoWrapper.getBoundingClientRect();
@@ -3703,23 +3679,6 @@ videoWrapper.addEventListener(
 
 videoWrapper.addEventListener(
   "contextmenu",
-  event => {
-    event.preventDefault();
-  }
-);
-
-/*
-  Safariの長押しによる範囲選択・ドラッグ開始を防ぐ
-*/
-videoWrapper.addEventListener(
-  "selectstart",
-  event => {
-    event.preventDefault();
-  }
-);
-
-videoWrapper.addEventListener(
-  "dragstart",
   event => {
     event.preventDefault();
   }
