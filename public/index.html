@@ -2014,42 +2014,7 @@ background:
     </section>
 
 
-    <!-- =====================================
-         STOPボタン編集画面
-    ====================================== -->
 
-    <div
-      id="stopEditorScreen"
-      class="stopEditorScreen hidden"
-    >
-
-      <header class="stopEditorHeader">
-
-        <div class="stopEditorTitle">
-          STOPボタン編集
-        </div>
-
-        <button
-          type="button"
-          id="finishStopEditorButton"
-          class="finishStopEditorButton"
-          aria-label="編集を完了する"
-        >
-          ✓
-        </button>
-
-      </header>
-
-
-      <div class="stopEditorMessage">
-        STOPボタン本体をドラッグすると移動できます。<br>
-        右下の矢印をドラッグすると大きさを変更できます。
-      </div>
-
-
-      <div id="stopEditorStage"></div>
-
-    </div>
 
   </main>
 
@@ -2095,15 +2060,6 @@ const joystickKnob =
 
 const openStopEditorButton =
   document.getElementById("openStopEditorButton");
-
-const stopEditorScreen =
-  document.getElementById("stopEditorScreen");
-
-const stopEditorStage =
-  document.getElementById("stopEditorStage");
-
-const finishStopEditorButton =
-  document.getElementById("finishStopEditorButton");
 
 const driveStopButtonText =
   document.getElementById("driveStopButtonText");
@@ -2164,13 +2120,7 @@ let stopEditStartTop = 0;
 let stopEditStartWidth = 0;
 let stopEditStartHeight = 0;
 
-let stopButtonDisabledBeforeEditing = true;
 
-const videoWrapperOriginalParent =
-  videoWrapper.parentNode;
-
-const videoWrapperOriginalNextSibling =
-  videoWrapper.nextSibling;
 
     const joystickRadius = 70;
     const knobRadius = 25;
@@ -4185,17 +4135,7 @@ window.addEventListener(
 );
 
 
-/*
-  旧編集画面の完了ボタンが残っていても
-  同じ終了処理を行う
-*/
-if (finishStopEditorButton) {
 
-  finishStopEditorButton.addEventListener(
-    "click",
-    finishStopButtonEditor
-  );
-}
     
 stopButton.addEventListener(
   "click",
