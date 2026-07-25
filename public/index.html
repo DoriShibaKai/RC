@@ -3244,10 +3244,28 @@ async function togglePcFullscreen() {
       await document.exitFullscreen();
     }
 
+    // 全画面になる直前のSTOPボタンの
+    // 実際の幅と高さを取得する
+    const stopButtonRect =
+      driveStopButton.getBoundingClientRect();
+
+    // 全画面中に大きくならないよう，
+    // 現在の大きさをピクセルで固定する
+    driveStopButton.style.width =
+      `${stopButtonRect.width}px`;
+
+    driveStopButton.style.height =
+      `${stopButtonRect.height}px`;
+
     // 映像枠全体を全画面にする
     await videoWrapper.requestFullscreen();
 
   } catch (error) {
+
+    // 全画面に失敗した場合は，
+    // 固定した大きさを元に戻す
+    driveStopButton.style.width = "";
+    driveStopButton.style.height = "";
 
     console.error(
       "全画面表示の切り替えに失敗しました。",
@@ -3317,6 +3335,11 @@ document.addEventListener(
       `;
 
     } else {
+
+       // 全画面を終了したので，
+      // STOPボタンを通常時の割合指定へ戻す
+      driveStopButton.style.width = "";
+      driveStopButton.style.height = "";
 
       pcFullscreenButton.title =
         "全画面表示";
