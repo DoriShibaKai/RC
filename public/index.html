@@ -5467,7 +5467,53 @@ iphoneStopGesture.addEventListener(
   "change",
   saveSettings
 );
+// ======================================
+// パソコンのキーによるSTOP・解除
+// ======================================
 
+window.addEventListener(
+  "keydown",
+  event => {
+
+    // キーを押し続けたときの連続実行を防ぐ
+    if (event.repeat) {
+      return;
+    }
+
+    // プルダウンで「使用しない」が選ばれている
+    if (pcStopKey.value === "None") {
+      return;
+    }
+
+    // 選択されているキー以外は反応しない
+    if (event.code !== pcStopKey.value) {
+      return;
+    }
+
+    // 文字入力欄やプルダウン操作中は反応させない
+    const activeElement =
+      document.activeElement;
+
+    if (
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLSelectElement ||
+      activeElement instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+
+    // 接続前など，STOPボタンが無効なときは操作しない
+    if (driveStopButton.disabled) {
+      return;
+    }
+
+    // ブラウザ本来のSpaceスクロールなどを防ぐ
+    event.preventDefault();
+
+    // 画面上のSTOPボタンと同じ処理を実行
+    toggleDriveStop(event);
+  }
+);
 
 
 
