@@ -304,13 +304,13 @@
     background: rgba(6, 13, 28, 0.5);
   }
 
-  /* ======================================
-     3つの操作ボタン
+   /* ======================================
+     WebRTCの操作ボタン
   ====================================== */
 
   .buttons {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
 
@@ -462,13 +462,165 @@
   }
 
   #stopButton {
+    width: 100%;
+    min-height: 72px;
     margin: 0;
+
+    border: 1px solid rgba(255, 100, 110, 0.38);
+    border-radius: 13px;
+
     background:
       linear-gradient(
         145deg,
-        var(--gray-start),
-        var(--gray-end)
+        rgba(52, 34, 50, 0.98),
+        rgba(31, 29, 45, 0.98)
       );
+
+    color: #ffffff;
+  }
+
+    /* ======================================
+     機器・通信管理
+  ====================================== */
+
+  .deviceManagement {
+    margin-top: 12px;
+    padding: 13px;
+
+    border: 1px solid rgba(148, 173, 220, 0.32);
+    border-radius: 14px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(15, 30, 57, 0.88),
+        rgba(8, 20, 42, 0.92)
+      );
+  }
+
+  .deviceManagementTitle {
+    margin: 0 0 10px;
+
+    color: #dce6fb;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .deviceManagementRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 255px;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .bleConnectionCard {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+
+    min-width: 0;
+    min-height: 72px;
+    padding: 11px 13px;
+
+    border: 1px solid rgba(132, 161, 216, 0.25);
+    border-radius: 12px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(18, 36, 68, 0.98),
+        rgba(11, 26, 52, 0.98)
+      );
+  }
+
+  .bleConnectionIcon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+
+    border-radius: 50%;
+    background: rgba(54, 86, 139, 0.38);
+    color: #ffffff;
+  }
+
+  .bleConnectionIcon svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .bleConnectionInformation {
+    min-width: 0;
+  }
+
+  .bleConnectionTitle {
+    margin: 0;
+
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1.3;
+  }
+
+  .bleConnectionDescription {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    margin: 4px 0 0;
+
+    color: var(--text-sub);
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .bleStatusDot {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+
+    border-radius: 50%;
+    background: #7f899d;
+  }
+
+  .bleStatusDot.connected {
+    background: #62df83;
+    box-shadow: 0 0 9px rgba(98, 223, 131, 0.75);
+  }
+
+  #bleConnectButton {
+    min-width: 108px;
+    min-height: 43px;
+    padding: 8px 15px;
+
+    border: 1px solid rgba(210, 221, 244, 0.5);
+    border-radius: 9px;
+
+    background:
+      linear-gradient(
+        145deg,
+        #53617a,
+        #35435d
+      );
+
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  #bleConnectButton:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  #stopButton .mainActionIcon {
+    color: #ff6c72;
   }
 
   button:disabled {
@@ -1272,6 +1424,62 @@ body.mobilePseudoFullscreenActive {
     #stopEditorStage {
       padding: 9px;
     }
+
+
+    .deviceManagement {
+      margin-top: 9px;
+      padding: 9px;
+      border-radius: 11px;
+    }
+
+    .deviceManagementTitle {
+      margin-bottom: 7px;
+      font-size: 12px;
+    }
+
+    .deviceManagementRow {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .bleConnectionCard {
+      grid-template-columns: 38px minmax(0, 1fr) auto;
+      gap: 8px;
+
+      min-height: 60px;
+      padding: 8px;
+    }
+
+    .bleConnectionIcon {
+      width: 35px;
+      height: 35px;
+    }
+
+    .bleConnectionIcon svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    .bleConnectionTitle {
+      font-size: 14px;
+    }
+
+    .bleConnectionDescription {
+      font-size: 9px;
+    }
+
+    #bleConnectButton {
+      min-width: 82px;
+      min-height: 38px;
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+
+    #stopButton {
+      min-height: 58px;
+    }
+
+    
   }
 
   /* ======================================
@@ -2066,8 +2274,7 @@ body.lightTheme #roomName:disabled {
         </div>
       </div>
 
-
-      <!-- 3つの操作ボタン -->
+      <!-- WebRTC操作ボタン -->
 
       <div class="buttons">
 
@@ -2105,11 +2312,11 @@ body.lightTheme #roomName:disabled {
             </svg>
           </span>
 
-         <span class="mainActionText">
-  <span class="mainActionTitle">
-    カメラ送信
-  </span>
-</span>
+          <span class="mainActionText">
+            <span class="mainActionTitle">
+              カメラ送信
+            </span>
+          </span>
 
         </button>
 
@@ -2149,64 +2356,9 @@ body.lightTheme #roomName:disabled {
             </svg>
           </span>
 
-         <span class="mainActionText">
-  <span class="mainActionTitle">
-    映像を受信
-  </span>
-</span>
-
-               </button>
-
-
-        <button
-          id="bleConnectButton"
-          class="mainActionButton"
-          type="button"
-        >
           <span class="mainActionText">
             <span class="mainActionTitle">
-              ラジコンにBLE接続
-            </span>
-
-            <span
-              id="bleConnectionStatus"
-              class="mainActionDescription"
-            >
-              未接続
-            </span>
-          </span>
-        </button>
-
-
-        <button
-          id="stopButton"
-          class="mainActionButton"
-          type="button"
-          disabled
-        >
-
-          <span
-            class="mainActionIcon"
-            aria-hidden="true"
-          >
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M12 2v9"
-              ></path>
-
-              <path
-                d="M6.1 5.8a9 9 0 1 0 11.8 0"
-              ></path>
-            </svg>
-          </span>
-
-          <span class="mainActionText">
-            <span class="mainActionTitle">
-              接続を終了
-            </span>
-
-            <span class="mainActionDescription">
-              すべての接続を切断
+              映像を受信
             </span>
           </span>
 
@@ -2218,6 +2370,97 @@ body.lightTheme #roomName:disabled {
       <p class="note">
         通信するデバイスは同じ部屋名を使用
       </p>
+
+
+      <!-- 機器・通信管理 -->
+
+      <section class="deviceManagement">
+
+        <h2 class="deviceManagementTitle">
+          機器・通信管理
+        </h2>
+
+        <div class="deviceManagementRow">
+
+          <div class="bleConnectionCard">
+
+            <span
+              class="bleConnectionIcon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
+                <path d="M7 7l10 10-5 5V2l5 5L7 17"></path>
+              </svg>
+            </span>
+
+            <div class="bleConnectionInformation">
+
+              <p class="bleConnectionTitle">
+                BLE接続：
+                <span id="bleConnectionStatus">
+                  未接続
+                </span>
+              </p>
+
+              <p class="bleConnectionDescription">
+                <span
+                  id="bleStatusDot"
+                  class="bleStatusDot"
+                  aria-hidden="true"
+                ></span>
+
+                ラジコンに接続して操作できます
+              </p>
+
+            </div>
+
+            <button
+              id="bleConnectButton"
+              type="button"
+            >
+              接続する
+            </button>
+
+          </div>
+
+
+          <button
+            id="stopButton"
+            class="mainActionButton"
+            type="button"
+            disabled
+          >
+
+            <span
+              class="mainActionIcon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2v9"></path>
+
+                <path
+                  d="M6.1 5.8a9 9 0 1 0 11.8 0"
+                ></path>
+              </svg>
+            </span>
+
+            <span class="mainActionText">
+
+              <span class="mainActionTitle">
+                接続を終了
+              </span>
+
+              <span class="mainActionDescription">
+                すべての接続を切断
+              </span>
+
+            </span>
+
+          </button>
+
+        </div>
+
+      </section>
 
 
       <!-- ===================================
