@@ -2462,7 +2462,7 @@ body.lightTheme #roomName:disabled {
                   aria-hidden="true"
                 ></span>
 
-                ラジコンに接続して操作できます
+                機器に接続して操作できます
               </p>
 
             </div>
@@ -3114,7 +3114,7 @@ function handleBleDisconnected() {
   );
 
   driveStatusElement.textContent =
-    "ラジコンとのBLE接続が切断されました。";
+    "機器とのBLE接続が切断されました。";
 }
 
 
@@ -3210,7 +3210,7 @@ async function connectBleDevice() {
     );
 
     driveStatusElement.textContent =
-      "ラジコンとのBLE接続が完了しました。";
+      "機器とのBLE接続が完了しました。";
 
     setStatus(
       "AtomS3 LiteへBLE接続しました。"
@@ -3244,7 +3244,7 @@ async function connectBleDevice() {
     }
 
     driveStatusElement.textContent =
-      "ラジコンとのBLE接続に失敗しました。";
+      "機器とのBLE接続に失敗しました。";
 
     setStatus(
       "BLE接続に失敗しました。\n" +
@@ -3306,7 +3306,7 @@ function toggleBleConnection() {
     disconnectBleDevice();
 
     driveStatusElement.textContent =
-      "ラジコンとのBLE接続を終了しました。";
+      "機器とのBLE接続を終了しました。";
 
     setStatus(
       "AtomS3 LiteとのBLE接続を終了しました。"
