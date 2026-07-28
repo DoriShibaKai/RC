@@ -1277,25 +1277,30 @@ body.mobilePseudoFullscreenActive {
   /* ======================================
    さらに小さい画面のデバイス用
 ====================================== */
-  @media (max-width: 370px) {
-    .mainActionButton {
-      min-height: 59px;
-    }
+ @media (max-width: 370px) {
 
-    .mainActionIcon {
-      display: none;
-    }
-
-    .mainActionTitle {
-      font-size: 12px;
-    }
-
-    .headerBadge {
-      display: none;
-    }
-
-   
+  .mainActionButton {
+    min-height: 59px;
   }
+
+  .mainActionIcon {
+    display: none;
+  }
+
+  /* ↓追加 */
+  .mainActionText {
+    transform: translateX(0) !important;
+  }
+
+  .mainActionTitle {
+    font-size: 12px;
+  }
+
+  .headerBadge {
+    display: none;
+  }
+
+}
   
 
 
