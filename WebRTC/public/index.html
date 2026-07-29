@@ -3033,6 +3033,14 @@ let stopEditStartHeight = 0;
     let bleCharacteristic = null;
     let bleConnecting = false;
 
+    /*
+      BLE座標送信用キュー。
+      ジョイスティック操作中に書き込みが重ならないよう，
+      常に最新の座標だけを順番に送る。
+    */
+    let pendingBleCoordinates = null;
+    let bleCoordinateWriteInProgress = false;
+
     const rtcConfiguration = {
       iceServers: [
         {
@@ -4132,12 +4140,10 @@ if (
 }
 
     /*
-      ジョイスティックは受信側だけで使用する。
+      送信側・受信側，PC・iPhoneのどれでも
+      ジョイスティックを使用できる。
     */
-    if (
-      role !== "viewer" ||
-      driveStopped
-    ) {
+    if (driveStopped) {
       return;
     }
 
@@ -4214,6 +4220,9 @@ if (
 
 
     function sendStopCommand() {
+  // この端末がBLE接続中なら，停止座標を直接Atomへ送る
+  sendCoordinatesToBle(0, 0);
+
   if (driveChannel && driveChannel.readyState === "open") {
     driveSequence++;
 
@@ -4426,6 +4435,64 @@ function sendSettingsState(active) {
   driveChannel.send(JSON.stringify(stopStateData));
 }
 
+/*
+  操縦座標をAtomS3 LiteへBLE送信する。
+  WebRTCの送信側・受信側，PC・iPhoneに関係なく，
+  この端末がBLE接続中なら送信する。
+*/
+function sendCoordinatesToBle(x, y) {
+  if (!bleCharacteristic) {
+    return;
+  }
+
+  const safeX = Math.max(-1, Math.min(1, Number(x) || 0));
+  const safeY = Math.max(-1, Math.min(1, Number(y) || 0));
+
+  pendingBleCoordinates = new Uint8Array([
+    Math.round((safeX + 1) * 127.5),
+    Math.round((safeY + 1) * 127.5)
+  ]);
+
+  processBleCoordinateQueue();
+}
+
+async function processBleCoordinateQueue() {
+  if (bleCoordinateWriteInProgress) {
+    return;
+  }
+
+  bleCoordinateWriteInProgress = true;
+
+  try {
+    while (pendingBleCoordinates && bleCharacteristic) {
+      const data = pendingBleCoordinates;
+      pendingBleCoordinates = null;
+
+      if (
+        typeof bleCharacteristic.writeValueWithoutResponse ===
+        "function"
+      ) {
+        await bleCharacteristic.writeValueWithoutResponse(data);
+      } else {
+        await bleCharacteristic.writeValue(data);
+      }
+
+      console.log(
+        "BLE送信 X:", data[0],
+        "Y:", data[1]
+      );
+    }
+  } catch (error) {
+    console.error("BLE操縦データ送信エラー", error);
+  } finally {
+    bleCoordinateWriteInProgress = false;
+
+    if (pendingBleCoordinates && bleCharacteristic) {
+      processBleCoordinateQueue();
+    }
+  }
+}
+
    function handleDriveChannelMessage(event) {
   console.log("受信", event.data);
 
@@ -4488,73 +4555,34 @@ if (command.type === "drive-stop-state") {
   return;
 }
 
-// 操縦命令を受信した場合
-if (command.type === "drive") {
+    // 操縦命令を受信した場合
+    if (command.type === "drive") {
 
-  // 非常停止中は，0以外の操縦命令をすべて無視する
-  if (
-    driveStopped &&
-    (command.x !== 0 || command.y !== 0)
-  ) {
-    console.log(
-      "非常停止中のため操縦命令を無視しました",
-      command
-    );
+      // 非常停止中は，0以外の操縦命令をすべて無視する
+      if (
+        driveStopped &&
+        (command.x !== 0 || command.y !== 0)
+      ) {
+        console.log(
+          "非常停止中のため操縦命令を無視しました",
+          command
+        );
 
-    driveStatusElement.textContent =
-      "非常停止中です。操縦命令を無視しました。";
+        driveStatusElement.textContent =
+          "非常停止中です。操縦命令を無視しました。";
 
-    return;
-  }
+        return;
+      }
 
-  driveStatusElement.textContent =
-    "操縦命令を受信しました。\n" +
-    "X：" + command.x + "\n" +
-    "Y：" + command.y + "\n" +
-    "sequence：" + command.sequence;
+      driveStatusElement.textContent =
+        "操縦命令を受信しました。\n" +
+        "X：" + command.x + "\n" +
+        "Y：" + command.y + "\n" +
+        "sequence：" + command.sequence;
 
-  // BLEが未接続なら送信しない
-  if (!bleCharacteristic) {
-    console.log(
-      "BLE未接続のため操縦データを送信できません"
-    );
-    return;
-  }
-
-  /*
-    X・Yを-1～1から0～255へ変換し，
-    2バイトでAtomS3 Liteへ送信する
-  */
-  const xByte = Math.round(
-    (Math.max(-1, Math.min(1, command.x)) + 1) *
-    127.5
-  );
-
-  const yByte = Math.round(
-    (Math.max(-1, Math.min(1, command.y)) + 1) *
-    127.5
-  );
-
-  const bleData =
-    new Uint8Array([xByte, yByte]);
-
-  bleCharacteristic
-    .writeValue(bleData)
-    .then(() => {
-      console.log(
-        "BLE送信 X:",
-        xByte,
-        "Y:",
-        yByte
-      );
-    })
-    .catch(error => {
-      console.error(
-        "BLE操縦データ送信エラー",
-        error
-      );
-    });
-}
+      // WebRTCで受信した座標も，BLE接続中ならAtomへ送る
+      sendCoordinatesToBle(command.x, command.y);
+    }
 
   } catch (error) {
     console.error(
@@ -4571,7 +4599,6 @@ if (command.type === "drive") {
   event => {
 
     if (
-      role !== "viewer" ||
       !joystickCandidate ||
       joystickPointerId !== event.pointerId ||
       driveStopped ||
@@ -4683,6 +4710,13 @@ if (command.type === "drive") {
       "　Y：" + y.toFixed(2);
 
 
+    const roundedX = Number(x.toFixed(2));
+    const roundedY = Number(y.toFixed(2));
+
+    // この端末がBLE接続中なら，直接Atomへ送る
+    sendCoordinatesToBle(roundedX, roundedY);
+
+    // WebRTC接続中なら，相手側にも同じ座標を送る
     if (
       driveChannel &&
       driveChannel.readyState === "open"
@@ -4692,8 +4726,8 @@ if (command.type === "drive") {
 
       const driveData = {
         type: "drive",
-        x: Number(x.toFixed(2)),
-        y: Number(y.toFixed(2)),
+        x: roundedX,
+        y: roundedY,
         sequence: driveSequence
       };
 
