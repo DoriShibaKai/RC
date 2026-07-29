@@ -1462,38 +1462,51 @@ body.mobilePseudoFullscreenActive {
       align-items: stretch;
     }
 
-    .bleConnectionCard {
-      grid-template-columns: 38px minmax(0, 1fr) auto;
-      gap: 8px;
+ .bleConnectionCard {
+    display: grid;
+    grid-template-columns: 35px minmax(0, 1fr);
+    grid-template-areas:
+        "icon info"
+        "button button";
+    gap: 8px;
+    min-height: 60px;
+    padding: 8px;
+}
 
-      min-height: 60px;
-      padding: 8px;
-    }
+.bleConnectionIcon {
+    grid-area: icon;
+    width: 35px;
+    height: 35px;
+}
 
-    .bleConnectionIcon {
-      width: 35px;
-      height: 35px;
-    }
+.bleConnectionInformation {
+    grid-area: info;
+    min-width: 0;
+}
 
-    .bleConnectionIcon svg {
-      width: 21px;
-      height: 21px;
-    }
+.bleConnectionIcon svg {
+    width: 21px;
+    height: 21px;
+}
 
-    .bleConnectionTitle {
-      font-size: 14px;
-    }
+.bleConnectionTitle {
+    font-size: 14px;
+    white-space: nowrap;
+}
 
-    .bleConnectionDescription {
-      font-size: 9px;
-    }
+.bleConnectionDescription {
+    font-size: 9px;
+}
 
-    #bleConnectButton {
-      min-width: 82px;
-      min-height: 38px;
-      padding: 7px 10px;
-      font-size: 13px;
-    }
+#bleConnectButton {
+    grid-area: button;
+    width: 100%;
+    min-width: 0;
+    min-height: 38px;
+    margin-top: 0;
+    padding: 7px 10px;
+    font-size: 13px;
+}
 
        #stopButton {
       min-height: 60px;
