@@ -4885,6 +4885,31 @@ videoWrapper.addEventListener(
   }
 );
 
+    /*
+  映像枠の外でマウスや指を離した場合も，
+  必ずジョイスティックを中央へ戻して停止する
+*/
+window.addEventListener(
+  "pointerup",
+  event => {
+    finishJoystickPointer(event, false);
+  }
+);
+
+window.addEventListener(
+  "pointercancel",
+  event => {
+    finishJoystickPointer(event, true);
+  }
+);
+
+videoWrapper.addEventListener(
+  "lostpointercapture",
+  event => {
+    finishJoystickPointer(event, true);
+  }
+);
+
 /*
   iPhone/Safariで長押し中にページ選択へ渡さない。
   映像枠内だけに限定し，ボタン上では実行しない。
