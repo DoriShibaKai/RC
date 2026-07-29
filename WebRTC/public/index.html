@@ -3016,6 +3016,10 @@ let stopEditStartHeight = 0;
     let offerStarted = false;
     let driveChannel = null;
 
+    // 「すべて切断」の確認応答待ち
+    let disconnectAckTimer = null;
+    let disconnectRequestPending = false;
+
     /*
       AtomS3 LiteのBLE設定
     */
@@ -3991,25 +3995,35 @@ createPeerConnection();
 
 function disconnectBoth() {
 
+  // 二重送信を防ぐ
+  if (disconnectRequestPending) {
+    return;
+  }
+
   // WebRTCのDataChannelが開いていれば，
-  // 相手へ「接続を終了する」と直接通知する
+  // 相手へ切断要求を送り，確認応答を待つ
   if (
     driveChannel &&
     driveChannel.readyState === "open"
   ) {
-    const disconnectData = {
-      type: "disconnect-all"
-    };
+    disconnectRequestPending = true;
 
     driveChannel.send(
-      JSON.stringify(disconnectData)
+      JSON.stringify({
+        type: "disconnect-all"
+      })
     );
 
-    // 送信直後に回線を閉じると命令が届かない場合があるため，
-    // 少し待ってから自分側を終了する
-    setTimeout(() => {
+    setStatus(
+      "相手側へ切断を通知しています。"
+    );
+
+    // 確認応答が来ない場合でも，1.5秒後には終了する
+    disconnectAckTimer = setTimeout(() => {
+      disconnectAckTimer = null;
+      disconnectRequestPending = false;
       stopAll(true);
-    }, 150);
+    }, 1500);
 
     return;
   }
@@ -4022,6 +4036,13 @@ function disconnectBoth() {
     
       function stopAll(showMessage = true) {
       stopDriveCommunicationWatchdog();
+
+      if (disconnectAckTimer) {
+        clearTimeout(disconnectAckTimer);
+        disconnectAckTimer = null;
+      }
+
+      disconnectRequestPending = false;
 
       /*
         「すべて切断」なので，
@@ -4511,14 +4532,41 @@ async function processBleCoordinateQueue() {
     // 相手が「接続を終了」を押した場合
 if (command.type === "disconnect-all") {
 
-  // この端末側も終了する
-  stopAll(false);
+  // 回線を閉じる前に，受信確認を返信する
+  if (
+    driveChannel &&
+    driveChannel.readyState === "open"
+  ) {
+    driveChannel.send(
+      JSON.stringify({
+        type: "disconnect-ack"
+      })
+    );
+  }
 
   setStatus(
     "相手側が接続を終了しました。\n" +
     "この端末側の接続も終了しました。"
   );
 
+  // ACKが送信キューに入る時間を少し確保してから終了する
+  setTimeout(() => {
+    stopAll(false);
+  }, 200);
+
+  return;
+}
+
+// 自分が送った切断要求の確認応答を受信した場合
+if (command.type === "disconnect-ack") {
+
+  if (disconnectAckTimer) {
+    clearTimeout(disconnectAckTimer);
+    disconnectAckTimer = null;
+  }
+
+  disconnectRequestPending = false;
+  stopAll(true);
   return;
 }
 
