@@ -4258,11 +4258,32 @@ if (
 );
 
 
-    function sendStopCommand() {
+   function sendStopCommand() {
+  console.warn(
+    "★★ sendStopCommand実行 ★★",
+    {
+      time: new Date().toISOString(),
+      role: role,
+      pointerId: joystickPointerId,
+      bleConnected: Boolean(bleCharacteristic),
+      dataChannelState:
+        driveChannel
+          ? driveChannel.readyState
+          : "なし"
+    }
+  );
+
   // この端末がBLE接続中なら，停止座標を直接Atomへ送る
+  console.warn(
+    "★★ BLEへ停止座標を要求 X:128 Y:128 ★★"
+  );
+
   sendCoordinatesToBle(0, 0);
 
-  if (driveChannel && driveChannel.readyState === "open") {
+  if (
+    driveChannel &&
+    driveChannel.readyState === "open"
+  ) {
     driveSequence++;
 
     const stopData = {
@@ -4272,15 +4293,27 @@ if (
       sequence: driveSequence
     };
 
-    driveChannel.send(JSON.stringify(stopData));
+    console.warn(
+      "★★ WebRTCへ停止座標を送信 ★★",
+      stopData
+    );
+
+    driveChannel.send(
+      JSON.stringify(stopData)
+    );
+  } else {
+    console.warn(
+      "WebRTC停止座標は未送信：DataChannelが開いていません"
+    );
   }
 
-  xyDisplay.textContent = "X：0.00　Y：0.00";
+  xyDisplay.textContent =
+    "X：0.00　Y：0.00";
 
   joystickKnob.style.left = "50%";
   joystickKnob.style.top = "50%";
 
-      joystickActive = false;
+  joystickActive = false;
 }
 
 function applyDriveStopState(stopped) {
