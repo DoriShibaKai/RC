@@ -639,13 +639,16 @@
     color: #ff6c72;
   }
 
- button:disabled {
+button:disabled {
     cursor: default;
     opacity: 0.48;
     filter: saturate(0.55);
+}
 
-    color: #FFD54F;
-    border: 2px solid #FFD54F;
+  #sendButton.selectedRole,
+#viewButton.selectedRole {
+    color: #FFD54F !important;
+    border: 2px solid #FFD54F !important;
     font-weight: 700;
 }
 
@@ -3461,9 +3464,12 @@ function setControlsConnected() {
   );
 }
 
-  function setControlsDisconnected() {
+ function setControlsDisconnected() {
   sendButton.disabled = false;
   viewButton.disabled = false;
+
+  sendButton.classList.remove("selectedRole");
+  viewButton.classList.remove("selectedRole");
   roomInput.disabled = false;
   driveStopButton.disabled = true;
    updateAllDisconnectButtonAvailability();
@@ -3916,8 +3922,12 @@ if (driveChannel) {
     async function startSender() {
       try {
         role = "sender";
-        offerStarted = false;
-        setControlsConnected();
+
+sendButton.classList.add("selectedRole");
+viewButton.classList.remove("selectedRole");
+
+offerStarted = false;
+setControlsConnected();
 
         setStatus(
           "iPhoneのカメラ使用許可を確認しています。"
@@ -3973,8 +3983,12 @@ createPeerConnection();
     async function startViewer() {
       try {
         role = "viewer";
-        offerStarted = false;
-        setControlsConnected();
+
+viewButton.classList.add("selectedRole");
+sendButton.classList.remove("selectedRole");
+
+offerStarted = false;
+setControlsConnected();
 
         createPeerConnection();
 
