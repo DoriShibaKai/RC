@@ -4278,7 +4278,27 @@ if (
     "★★ BLEへ停止座標を要求 X:128 Y:128 ★★"
   );
 
+  /*
+  停止座標はBLE通信で欠落しないように，
+  少し間隔を空けて合計3回送る
+*/
+sendCoordinatesToBle(0, 0);
+
+setTimeout(() => {
+  console.warn(
+    "★★ BLE停止座標を再送1回目 X:128 Y:128 ★★"
+  );
+
   sendCoordinatesToBle(0, 0);
+}, 100);
+
+setTimeout(() => {
+  console.warn(
+    "★★ BLE停止座標を再送2回目 X:128 Y:128 ★★"
+  );
+
+  sendCoordinatesToBle(0, 0);
+}, 250);
 
   if (
     driveChannel &&
