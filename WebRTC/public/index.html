@@ -3051,6 +3051,12 @@ let stopEditStartHeight = 0;
     */
     let pendingBleCoordinates = null;
     let bleCoordinateWriteInProgress = false;
+    /*
+  WebRTCで受け取った停止座標の再送タイマー。
+  新しい移動命令が来たら停止再送を中止する。
+*/
+let remoteStopResendTimer1 = null;
+let remoteStopResendTimer2 = null;
 
     const rtcConfiguration = {
       iceServers: [
@@ -4284,21 +4290,7 @@ if (
 */
 sendCoordinatesToBle(0, 0);
 
-setTimeout(() => {
-  console.warn(
-    "★★ BLE停止座標を再送1回目 X:128 Y:128 ★★"
-  );
 
-  sendCoordinatesToBle(0, 0);
-}, 100);
-
-setTimeout(() => {
-  console.warn(
-    "★★ BLE停止座標を再送2回目 X:128 Y:128 ★★"
-  );
-
-  sendCoordinatesToBle(0, 0);
-}, 250);
 
   if (
     driveChannel &&
@@ -4527,6 +4519,19 @@ function sendSettingsState(active) {
   driveChannel.send(JSON.stringify(stopStateData));
 }
 
+
+function cancelRemoteStopResend() {
+  if (remoteStopResendTimer1 !== null) {
+    clearTimeout(remoteStopResendTimer1);
+    remoteStopResendTimer1 = null;
+  }
+
+  if (remoteStopResendTimer2 !== null) {
+    clearTimeout(remoteStopResendTimer2);
+    remoteStopResendTimer2 = null;
+  }
+}
+    
 /*
   操縦座標をAtomS3 LiteへBLE送信する。
   WebRTCの送信側・受信側，PC・iPhoneに関係なく，
@@ -4675,33 +4680,81 @@ if (command.type === "drive-stop-state") {
 }
 
     // 操縦命令を受信した場合
-    if (command.type === "drive") {
+if (command.type === "drive") {
 
-      // 非常停止中は，0以外の操縦命令をすべて無視する
-      if (
-        driveStopped &&
-        (command.x !== 0 || command.y !== 0)
-      ) {
-        console.log(
-          "非常停止中のため操縦命令を無視しました",
-          command
-        );
+  // 非常停止中は，0以外の操縦命令をすべて無視する
+  if (
+    driveStopped &&
+    (command.x !== 0 || command.y !== 0)
+  ) {
+    console.log(
+      "非常停止中のため操縦命令を無視しました",
+      command
+    );
 
-        driveStatusElement.textContent =
-          "非常停止中です。操縦命令を無視しました。";
+    driveStatusElement.textContent =
+      "非常停止中です。操縦命令を無視しました。";
 
-        return;
-      }
+    return;
+  }
 
-      driveStatusElement.textContent =
-        "操縦命令を受信しました。\n" +
-        "X：" + command.x + "\n" +
-        "Y：" + command.y + "\n" +
-        "sequence：" + command.sequence;
+  driveStatusElement.textContent =
+    "操縦命令を受信しました。\n" +
+    "X：" + command.x + "\n" +
+    "Y：" + command.y + "\n" +
+    "sequence：" + command.sequence;
 
-      // WebRTCで受信した座標も，BLE接続中ならAtomへ送る
-      sendCoordinatesToBle(command.x, command.y);
-    }
+  const isStopCommand =
+    command.x === 0 &&
+    command.y === 0;
+
+  if (!isStopCommand) {
+    /*
+      新しい移動命令が来た場合は，
+      古い停止座標の予約再送を中止する。
+    */
+    cancelRemoteStopResend();
+
+    sendCoordinatesToBle(
+      command.x,
+      command.y
+    );
+
+    return;
+  }
+
+  /*
+    WebRTCから停止命令を受信した端末が，
+    BLE接続中ならAtomへ合計3回送る。
+  */
+  cancelRemoteStopResend();
+
+  console.warn(
+    "★★ WebRTC停止座標をBLEへ送信1回目 ★★"
+  );
+
+  sendCoordinatesToBle(0, 0);
+
+  remoteStopResendTimer1 = setTimeout(() => {
+    remoteStopResendTimer1 = null;
+
+    console.warn(
+      "★★ WebRTC停止座標をBLEへ送信2回目 ★★"
+    );
+
+    sendCoordinatesToBle(0, 0);
+  }, 100);
+
+  remoteStopResendTimer2 = setTimeout(() => {
+    remoteStopResendTimer2 = null;
+
+    console.warn(
+      "★★ WebRTC停止座標をBLEへ送信3回目 ★★"
+    );
+
+    sendCoordinatesToBle(0, 0);
+  }, 250);
+}
 
   } catch (error) {
     console.error(
