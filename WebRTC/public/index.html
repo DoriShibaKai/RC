@@ -4488,31 +4488,73 @@ if (command.type === "drive-stop-state") {
   return;
 }
 
-    // 操縦命令を受信した場合
-    if (command.type === "drive") {
+// 操縦命令を受信した場合
+if (command.type === "drive") {
 
-      // 非常停止中は，0以外の操縦命令をすべて無視する
-      if (
-        driveStopped &&
-        (command.x !== 0 || command.y !== 0)
-      ) {
-        console.log(
-          "非常停止中のため操縦命令を無視しました",
-          command
-        );
+  // 非常停止中は，0以外の操縦命令をすべて無視する
+  if (
+    driveStopped &&
+    (command.x !== 0 || command.y !== 0)
+  ) {
+    console.log(
+      "非常停止中のため操縦命令を無視しました",
+      command
+    );
 
-        driveStatusElement.textContent =
-          "非常停止中です。操縦命令を無視しました。";
+    driveStatusElement.textContent =
+      "非常停止中です。操縦命令を無視しました。";
 
-        return;
-      }
+    return;
+  }
 
-      driveStatusElement.textContent =
-        "操縦命令を受信しました。\n" +
-        "X：" + command.x + "\n" +
-        "Y：" + command.y + "\n" +
-        "sequence：" + command.sequence;
-    }
+  driveStatusElement.textContent =
+    "操縦命令を受信しました。\n" +
+    "X：" + command.x + "\n" +
+    "Y：" + command.y + "\n" +
+    "sequence：" + command.sequence;
+
+  // BLEが未接続なら送信しない
+  if (!bleCharacteristic) {
+    console.log(
+      "BLE未接続のため操縦データを送信できません"
+    );
+    return;
+  }
+
+  /*
+    X・Yを-1～1から0～255へ変換し，
+    2バイトでAtomS3 Liteへ送信する
+  */
+  const xByte = Math.round(
+    (Math.max(-1, Math.min(1, command.x)) + 1) *
+    127.5
+  );
+
+  const yByte = Math.round(
+    (Math.max(-1, Math.min(1, command.y)) + 1) *
+    127.5
+  );
+
+  const bleData =
+    new Uint8Array([xByte, yByte]);
+
+  bleCharacteristic
+    .writeValue(bleData)
+    .then(() => {
+      console.log(
+        "BLE送信 X:",
+        xByte,
+        "Y:",
+        yByte
+      );
+    })
+    .catch(error => {
+      console.error(
+        "BLE操縦データ送信エラー",
+        error
+      );
+    });
+}
 
   } catch (error) {
     console.error(
