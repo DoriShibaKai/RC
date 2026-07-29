@@ -4822,17 +4822,11 @@ function finishJoystickPointer(
   }
 
 
-  const wasDriving = joystickActive;
-
-
   /*
-    操縦していた場合は，
-    指を離した瞬間に停止命令を送る
-  */
-
-  if (wasDriving) {
-    sendStopCommand();
-  }
+  操作量に関係なく，
+  マウスまたは指を離したら必ず停止座標を送る
+*/
+sendStopCommand();
 
 
   joystickCandidate = false;
