@@ -2698,12 +2698,12 @@ body.lightTheme #roomName:disabled {
         ラジコンの走行速度を選択
       </span>
 
-      <select id="driveSpeedSelect">
-  <option value="slow" selected>
+     <select id="driveSpeedSelect">
+  <option value="0.25" selected>
     おそい
   </option>
 
-  <option value="fast">
+  <option value="1.0">
     はやい
   </option>
 </select>
@@ -3034,44 +3034,22 @@ let driveSequence = 0;
 /*
   操縦座標の再送間隔。
 
-  20msごとに確認することで，
-  手を放したときや方向転換時の反応を速くする。
+  AtomS3 Liteのタイムアウト停止を防ぐため，
+  操縦中は100msごとに現在座標を再送する。
 */
-const DRIVE_COMMAND_REPEAT_INTERVAL_MS = 20;
+const DRIVE_COMMAND_REPEAT_INTERVAL_MS = 100;
 
 let driveCommandRepeatTimer = null;
 let currentDriveX = 0;
 let currentDriveY = 0;
 
 /*
-  走行モード
+  走行速度の倍率
 
-  slow：
-  100ms間は元の強さで駆動し，
-  続く200ms間は停止する。
-
-  fast：
-  元の強さで連続駆動する。
+  おそい：0.25
+  はやい：1.0
 */
-let driveSpeedMode = "slow";
-
-/*
-  おそいモードの断続運転時間
-
-  30ms間は強く駆動し，
-  続く50ms間は停止する。
-*/
-const SLOW_DRIVE_ON_TIME_MS = 30;
-const SLOW_DRIVE_OFF_TIME_MS = 50;
-
-const SLOW_DRIVE_CYCLE_MS =
-  SLOW_DRIVE_ON_TIME_MS +
-  SLOW_DRIVE_OFF_TIME_MS;
-
-/*
-  おそいモードの1周期を開始した時刻
-*/
-let slowDriveCycleStartedAt = 0;
+let driveSpeedScale = 0.25;
 
 /*
   操縦用DataChannelの通信監視。
@@ -4368,44 +4346,22 @@ function transmitCurrentDriveCoordinates() {
     return;
   }
 
-  let transmittedDriveX = currentDriveX;
-  let transmittedDriveY = currentDriveY;
-
   /*
-    おそいモードでは，
+    選択した速度倍率を座標へ掛ける。
 
-    100ms間：元の強さで駆動
-    200ms間：停止
-
-    を繰り返す。
-
-    駆動中の座標を小さくしないため，
-    単純な倍率方式より発進力を残しやすい。
+    ブラウザ側ではON／OFFを繰り返さず，
+    現在の方向をそのままAtomS3 Liteへ送る。
   */
-  if (driveSpeedMode === "slow") {
-    const now = performance.now();
+  const scaledDriveX =
+    currentDriveX * driveSpeedScale;
 
-    if (slowDriveCycleStartedAt === 0) {
-      slowDriveCycleStartedAt = now;
-    }
-
-    const elapsedInCycle =
-      (now - slowDriveCycleStartedAt) %
-      SLOW_DRIVE_CYCLE_MS;
-
-    const slowDriveIsOn =
-      elapsedInCycle < SLOW_DRIVE_ON_TIME_MS;
-
-    if (!slowDriveIsOn) {
-      transmittedDriveX = 0;
-      transmittedDriveY = 0;
-    }
-  }
+  const scaledDriveY =
+    currentDriveY * driveSpeedScale;
 
   // この端末がBLE接続中ならAtomへ直接送る
   sendCoordinatesToBle(
-    transmittedDriveX,
-    transmittedDriveY
+    scaledDriveX,
+    scaledDriveY
   );
 
   // WebRTC接続中なら相手側にも同じ座標を送る
@@ -4417,8 +4373,8 @@ function transmitCurrentDriveCoordinates() {
 
     const driveData = {
       type: "drive",
-      x: transmittedDriveX,
-      y: transmittedDriveY,
+      x: scaledDriveX,
+      y: scaledDriveY,
       sequence: driveSequence
     };
 
@@ -4436,12 +4392,6 @@ function stopDriveCommandRepeater() {
     clearInterval(driveCommandRepeatTimer);
     driveCommandRepeatTimer = null;
   }
-
-  /*
-    次に操作を始めたとき，
-    必ず駆動側の100msから開始する。
-  */
-  slowDriveCycleStartedAt = 0;
 }
 
 /*
@@ -7086,24 +7036,16 @@ loadStopButtonGeometry();
 driveSpeedSelect.addEventListener(
   "change",
   () => {
-    driveSpeedMode =
-      driveSpeedSelect.value === "fast"
-        ? "fast"
-        : "slow";
-
-    /*
-      モードを変更したら，
-      おそいモードの周期を最初から開始する。
-    */
-    slowDriveCycleStartedAt = 0;
+    driveSpeedScale =
+      Number(driveSpeedSelect.value) || 0.25;
 
     console.log(
       "走行速度を変更:",
       driveSpeedSelect.options[
         driveSpeedSelect.selectedIndex
       ].text,
-      "モード:",
-      driveSpeedMode
+      "倍率:",
+      driveSpeedScale
     );
   }
 );
