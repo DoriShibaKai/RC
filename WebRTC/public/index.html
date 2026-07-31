@@ -2699,11 +2699,11 @@ body.lightTheme #roomName:disabled {
       </span>
 
       <select id="driveSpeedSelect">
-  <option value="0.25" selected>
+  <option value="slow" selected>
     おそい
   </option>
 
-  <option value="1.0">
+  <option value="fast">
     はやい
   </option>
 </select>
@@ -3038,12 +3038,31 @@ let currentDriveX = 0;
 let currentDriveY = 0;
 
 /*
-  走行速度の倍率
-  おそい：0.6
-  ふつう：0.8
-  はやい：1.0
+  走行モード
+
+  slow：
+  100ms間は元の強さで駆動し，
+  続く200ms間は停止する。
+
+  fast：
+  元の強さで連続駆動する。
 */
-let driveSpeedScale = 0.25;
+let driveSpeedMode = "slow";
+
+/*
+  おそいモードの断続運転時間
+*/
+const SLOW_DRIVE_ON_TIME_MS = 100;
+const SLOW_DRIVE_OFF_TIME_MS = 200;
+
+const SLOW_DRIVE_CYCLE_MS =
+  SLOW_DRIVE_ON_TIME_MS +
+  SLOW_DRIVE_OFF_TIME_MS;
+
+/*
+  おそいモードの1周期を開始した時刻
+*/
+let slowDriveCycleStartedAt = 0;
 
 /*
   操縦用DataChannelの通信監視。
@@ -4340,20 +4359,44 @@ function transmitCurrentDriveCoordinates() {
     return;
   }
 
-  /*
-    選択した速度倍率を座標へ掛ける。
-    方向は変えず，最大速度だけを制限する。
-  */
-  const scaledDriveX =
-    currentDriveX * driveSpeedScale;
+  let transmittedDriveX = currentDriveX;
+  let transmittedDriveY = currentDriveY;
 
-  const scaledDriveY =
-    currentDriveY * driveSpeedScale;
+  /*
+    おそいモードでは，
+
+    100ms間：元の強さで駆動
+    200ms間：停止
+
+    を繰り返す。
+
+    駆動中の座標を小さくしないため，
+    単純な倍率方式より発進力を残しやすい。
+  */
+  if (driveSpeedMode === "slow") {
+    const now = performance.now();
+
+    if (slowDriveCycleStartedAt === 0) {
+      slowDriveCycleStartedAt = now;
+    }
+
+    const elapsedInCycle =
+      (now - slowDriveCycleStartedAt) %
+      SLOW_DRIVE_CYCLE_MS;
+
+    const slowDriveIsOn =
+      elapsedInCycle < SLOW_DRIVE_ON_TIME_MS;
+
+    if (!slowDriveIsOn) {
+      transmittedDriveX = 0;
+      transmittedDriveY = 0;
+    }
+  }
 
   // この端末がBLE接続中ならAtomへ直接送る
   sendCoordinatesToBle(
-    scaledDriveX,
-    scaledDriveY
+    transmittedDriveX,
+    transmittedDriveY
   );
 
   // WebRTC接続中なら相手側にも同じ座標を送る
@@ -4365,8 +4408,8 @@ function transmitCurrentDriveCoordinates() {
 
     const driveData = {
       type: "drive",
-      x: scaledDriveX,
-      y: scaledDriveY,
+      x: transmittedDriveX,
+      y: transmittedDriveY,
       sequence: driveSequence
     };
 
@@ -4384,6 +4427,12 @@ function stopDriveCommandRepeater() {
     clearInterval(driveCommandRepeatTimer);
     driveCommandRepeatTimer = null;
   }
+
+  /*
+    次に操作を始めたとき，
+    必ず駆動側の100msから開始する。
+  */
+  slowDriveCycleStartedAt = 0;
 }
 
 /*
@@ -7028,16 +7077,24 @@ loadStopButtonGeometry();
 driveSpeedSelect.addEventListener(
   "change",
   () => {
-    driveSpeedScale =
-      Number(driveSpeedSelect.value) || 0.25;
+    driveSpeedMode =
+      driveSpeedSelect.value === "fast"
+        ? "fast"
+        : "slow";
+
+    /*
+      モードを変更したら，
+      おそいモードの周期を最初から開始する。
+    */
+    slowDriveCycleStartedAt = 0;
 
     console.log(
       "走行速度を変更:",
       driveSpeedSelect.options[
         driveSpeedSelect.selectedIndex
       ].text,
-      "倍率:",
-      driveSpeedScale
+      "モード:",
+      driveSpeedMode
     );
   }
 );
