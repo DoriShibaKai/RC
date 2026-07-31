@@ -2699,18 +2699,14 @@ body.lightTheme #roomName:disabled {
       </span>
 
       <select id="driveSpeedSelect">
-        <option value="0.6" selected>
-          おそい
-        </option>
+  <option value="0.25" selected>
+    おそい
+  </option>
 
-        <option value="0.8">
-          ふつう
-        </option>
-
-        <option value="1.0">
-          はやい
-        </option>
-      </select>
+  <option value="1.0">
+    はやい
+  </option>
+</select>
 
     </section>
 
@@ -3047,7 +3043,7 @@ let currentDriveY = 0;
   ふつう：0.8
   はやい：1.0
 */
-let driveSpeedScale = 0.6;
+let driveSpeedScale = 0.25;
 
 /*
   操縦用DataChannelの通信監視。
@@ -7033,7 +7029,7 @@ driveSpeedSelect.addEventListener(
   "change",
   () => {
     driveSpeedScale =
-      Number(driveSpeedSelect.value) || 0.6;
+      Number(driveSpeedSelect.value) || 0.25;
 
     console.log(
       "走行速度を変更:",
