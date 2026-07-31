@@ -2676,6 +2676,48 @@ body.lightTheme #roomName:disabled {
 
 
     <!-- ===================================
+     走行速度設定
+==================================== -->
+
+<section class="settingsGroup">
+
+  <h2 class="settingsGroupTitle">
+    走行速度
+  </h2>
+
+  <div class="settingsGroupCards">
+
+    <section class="settingsSection">
+
+      <div class="settingsSectionTitle">
+        速度
+      </div>
+
+      <span class="settingsDescription">
+        ラジコンの走行速度を選択
+      </span>
+
+      <select id="driveSpeedSelect">
+        <option value="0.6" selected>
+          おそい
+        </option>
+
+        <option value="0.8">
+          ふつう
+        </option>
+
+        <option value="1.0">
+          はやい
+        </option>
+      </select>
+
+    </section>
+
+  </div>
+
+</section>
+
+    <!-- ===================================
          背景設定
     ==================================== -->
 
@@ -2932,6 +2974,9 @@ const stopVisibilityState =
 const themeModeToggle =
   document.getElementById("themeModeToggle");
 
+const driveSpeedSelect =
+  document.getElementById("driveSpeedSelect");
+
 const headerBadgeDot =
   document.querySelector(".headerBadgeDot");
 
@@ -2994,6 +3039,14 @@ const DRIVE_COMMAND_REPEAT_INTERVAL_MS = 100;
 let driveCommandRepeatTimer = null;
 let currentDriveX = 0;
 let currentDriveY = 0;
+
+/*
+  走行速度の倍率
+  おそい：0.6
+  ふつう：0.8
+  はやい：1.0
+*/
+let driveSpeedScale = 0.6;
 
 /*
   操縦用DataChannelの通信監視。
@@ -4290,10 +4343,20 @@ function transmitCurrentDriveCoordinates() {
     return;
   }
 
+  /*
+    選択した速度倍率を座標へ掛ける。
+    方向は変えず，最大速度だけを制限する。
+  */
+  const scaledDriveX =
+    currentDriveX * driveSpeedScale;
+
+  const scaledDriveY =
+    currentDriveY * driveSpeedScale;
+
   // この端末がBLE接続中ならAtomへ直接送る
   sendCoordinatesToBle(
-    currentDriveX,
-    currentDriveY
+    scaledDriveX,
+    scaledDriveY
   );
 
   // WebRTC接続中なら相手側にも同じ座標を送る
@@ -4305,8 +4368,8 @@ function transmitCurrentDriveCoordinates() {
 
     const driveData = {
       type: "drive",
-      x: currentDriveX,
-      y: currentDriveY,
+      x: scaledDriveX,
+      y: scaledDriveY,
       sequence: driveSequence
     };
 
@@ -6964,6 +7027,23 @@ themeModeToggle.addEventListener(
 
 loadSettings();
 loadStopButtonGeometry();
+
+driveSpeedSelect.addEventListener(
+  "change",
+  () => {
+    driveSpeedScale =
+      Number(driveSpeedSelect.value) || 0.6;
+
+    console.log(
+      "走行速度を変更:",
+      driveSpeedSelect.options[
+        driveSpeedSelect.selectedIndex
+      ].text,
+      "倍率:",
+      driveSpeedScale
+    );
+  }
+);
 
   </script>
 </body>
