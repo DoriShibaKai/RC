@@ -2698,7 +2698,7 @@ body.lightTheme #roomName:disabled {
         ラジコンの走行速度を選択
       </span>
 
-     <select id="driveSpeedSelect">
+      <select id="driveSpeedSelect">
   <option value="0.25" selected>
     おそい
   </option>
@@ -3031,12 +3031,6 @@ let driveSequence = 0;
   最新座標を一定間隔で送り続ける。
   PC・iPhone・小さい画面のすべてで共通して使用する。
 */
-/*
-  操縦座標の再送間隔。
-
-  AtomS3 Liteのタイムアウト停止を防ぐため，
-  操縦中は100msごとに現在座標を再送する。
-*/
 const DRIVE_COMMAND_REPEAT_INTERVAL_MS = 100;
 
 let driveCommandRepeatTimer = null;
@@ -3045,8 +3039,8 @@ let currentDriveY = 0;
 
 /*
   走行速度の倍率
-
-  おそい：0.25
+  おそい：0.6
+  ふつう：0.8
   はやい：1.0
 */
 let driveSpeedScale = 0.25;
@@ -4348,9 +4342,7 @@ function transmitCurrentDriveCoordinates() {
 
   /*
     選択した速度倍率を座標へ掛ける。
-
-    ブラウザ側ではON／OFFを繰り返さず，
-    現在の方向をそのままAtomS3 Liteへ送る。
+    方向は変えず，最大速度だけを制限する。
   */
   const scaledDriveX =
     currentDriveX * driveSpeedScale;
