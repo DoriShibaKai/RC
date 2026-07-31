@@ -3031,7 +3031,13 @@ let driveSequence = 0;
   最新座標を一定間隔で送り続ける。
   PC・iPhone・小さい画面のすべてで共通して使用する。
 */
-const DRIVE_COMMAND_REPEAT_INTERVAL_MS = 100;
+/*
+  操縦座標の再送間隔。
+
+  20msごとに確認することで，
+  手を放したときや方向転換時の反応を速くする。
+*/
+const DRIVE_COMMAND_REPEAT_INTERVAL_MS = 20;
 
 let driveCommandRepeatTimer = null;
 let currentDriveX = 0;
@@ -3051,9 +3057,12 @@ let driveSpeedMode = "slow";
 
 /*
   おそいモードの断続運転時間
+
+  30ms間は強く駆動し，
+  続く50ms間は停止する。
 */
-const SLOW_DRIVE_ON_TIME_MS = 100;
-const SLOW_DRIVE_OFF_TIME_MS = 200;
+const SLOW_DRIVE_ON_TIME_MS = 30;
+const SLOW_DRIVE_OFF_TIME_MS = 50;
 
 const SLOW_DRIVE_CYCLE_MS =
   SLOW_DRIVE_ON_TIME_MS +
