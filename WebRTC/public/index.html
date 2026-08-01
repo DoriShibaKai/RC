@@ -8,7 +8,6 @@
   >
   <title>遠隔操作カメラ</title>
 
-  
 <style>
   * {
     box-sizing: border-box;
@@ -193,12 +192,6 @@
 .headerBadgeDot.connected {
   background: #62df83;
   box-shadow: 0 0 10px rgba(98,223,131,.8);
-}
-
-  /* WebRTC接続中 */
-.headerBadgeDot.connected {
-  background: #62df83;
-  box-shadow: 0 0 10px rgba(98, 223, 131, 0.8);
 }
 
 /* WebRTC接続処理中 */
@@ -435,8 +428,6 @@
   white-space: nowrap;
 }
 
- 
-
   .mainActionDescription {
     color: rgba(255, 255, 255, 0.72);
     font-size: 10px;
@@ -661,12 +652,10 @@ button:disabled {
     line-height: 1.55;
   }
 
-
   /* ======================================
      状態表示
   ====================================== */
 
- 
 .compactStatusRow {
   display: flex;
   align-items: flex-start;
@@ -747,7 +736,7 @@ button:disabled {
     box-shadow:
       inset 0 0 0 1px rgba(255, 255, 255, 0.025),
       0 10px 24px rgba(0, 0, 0, 0.24);
-    
+
     touch-action: none;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -818,7 +807,6 @@ button:disabled {
   height: 24px;
   pointer-events: none;
 }
-
 
 /* ======================================
    本当の全画面表示
@@ -910,7 +898,6 @@ body.mobilePseudoFullscreenActive {
   bottom: max(12px, env(safe-area-inset-bottom));
 }
 
-
 /* ======================================
    iPhone・小さい画面
 ====================================== */
@@ -935,7 +922,6 @@ body.mobilePseudoFullscreenActive {
     display: flex;
   }
 }
-
 
 /* さらに小さい画面 */
 
@@ -1387,7 +1373,7 @@ body.mobilePseudoFullscreenActive {
     calc(var(--iphone-icon-base-x) + 2px)
   );
 }
-    
+
     .mainActionDescription {
       display: none;
     }
@@ -1396,8 +1382,6 @@ body.mobilePseudoFullscreenActive {
       margin-top: 8px;
       font-size: 9px;
     }
-
-
 
     .compactStatusRow {
   gap: 4px;
@@ -1443,12 +1427,9 @@ body.mobilePseudoFullscreenActive {
   border-radius: 2px;
 }
 
-    
-
     #stopEditorStage {
       padding: 9px;
     }
-
 
     .deviceManagement {
       margin-top: 9px;
@@ -1545,7 +1526,6 @@ body.mobilePseudoFullscreenActive {
       font-size: 13px;
     }
 
-    
   }
 
   /* ======================================
@@ -1586,8 +1566,6 @@ body.mobilePseudoFullscreenActive {
     transform: translateX(0) !important;
   }
 }
-  
-
 
 /* ======================================
    詳細設定：カード型デザイン完成版
@@ -1679,7 +1657,6 @@ body.mobilePseudoFullscreenActive {
   margin-top: 7px;
 }
 
-
 /* STOP設定・背景設定の見出し */
 .settingsGroupTitle {
   margin: 0 0 8px;
@@ -1692,14 +1669,12 @@ body.mobilePseudoFullscreenActive {
   letter-spacing: 0.02em;
 }
 
-
 /* 同じ設定グループ内のカード */
 .settingsGroupCards {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 
 /* グループ下の補足 */
 .settingsGroupNote {
@@ -1815,7 +1790,6 @@ body.lightTheme .stopVisibilityState {
   color: #344054;
 }
 
-
 /* ======================================
    背景設定のトグル
 ====================================== */
@@ -1833,7 +1807,6 @@ body.lightTheme .stopVisibilityState {
   cursor: pointer;
 }
 
-
 /* 実際のチェックボックスを画面外へ隠す */
 .themeToggleControl input {
   position: absolute;
@@ -1843,7 +1816,6 @@ body.lightTheme .stopVisibilityState {
   opacity: 0;
   pointer-events: none;
 }
-
 
 /* トグル本体 */
 .themeToggleSwitch {
@@ -1868,7 +1840,6 @@ body.lightTheme .stopVisibilityState {
     border-color 0.2s;
 }
 
-
 /* トグルの丸 */
 .themeToggleSwitch::after {
   content: "";
@@ -1888,7 +1859,6 @@ body.lightTheme .stopVisibilityState {
   transition: transform 0.2s;
 }
 
-
 /* 将来ONになったときの見た目 */
 .themeToggleControl input:checked +
 .themeToggleSwitch {
@@ -1901,7 +1871,6 @@ body.lightTheme .stopVisibilityState {
   transform: translateX(24px);
 }
 
-
 /* ダークなどの表示文字 */
 .themeToggleText {
   min-width: 52px;
@@ -1910,7 +1879,6 @@ body.lightTheme .stopVisibilityState {
   font-size: 15px;
   font-weight: bold;
 }
-
 
 /* 今は準備中なので少し薄く表示 */
 .themeToggleControl:has(input:disabled) {
@@ -2012,8 +1980,6 @@ body.lightTheme .stopVisibilityState {
   font-weight: 600;
   line-height: 1.45;
 }
-
-
 
 /*
   パソコン・iPhoneのlabel自体は箱を作らず、
@@ -2149,8 +2115,6 @@ body.lightTheme .stopVisibilityState {
   margin-top: 0;
 }
 
-  
-
 .settingsGroupTitle {
   margin-bottom: 6px;
   padding-left: 2px;
@@ -2161,8 +2125,6 @@ body.lightTheme .stopVisibilityState {
   margin-top: 6px;
   font-size: 11px;
 }
-
-
 
 .themeToggleSwitch {
   width: 52px;
@@ -2185,9 +2147,6 @@ body.lightTheme .stopVisibilityState {
 
 }
 
-
-
-  
 /* ======================================
    さらに小さい画面用
    画面幅370px以下
@@ -2215,7 +2174,6 @@ body.lightTheme .stopVisibilityState {
 .themeToggleControl {
   font-size: 13px;
 }
-
 
 .settingsGroupTitle {
   font-size: 15px;
@@ -2287,10 +2245,6 @@ body.lightTheme #roomName:disabled {
 
 </style>
 
-
-
-
-  
 </head>
 
 <body>
@@ -2322,7 +2276,6 @@ body.lightTheme #roomName:disabled {
         WebRTC
       </div>
     </header>
-
 
     <!-- =====================================
          接続操作
@@ -2397,7 +2350,6 @@ body.lightTheme #roomName:disabled {
 
         </button>
 
-
         <button
           id="viewButton"
           class="mainActionButton"
@@ -2443,11 +2395,9 @@ body.lightTheme #roomName:disabled {
 
       </div>
 
-
       <p class="note">
         通信するデバイスは同じ部屋名を使用
       </p>
-
 
       <!-- 機器・通信管理 -->
 
@@ -2500,7 +2450,6 @@ body.lightTheme #roomName:disabled {
 
           </div>
 
-
           <button
             id="stopButton"
             class="mainActionButton"
@@ -2539,7 +2488,6 @@ body.lightTheme #roomName:disabled {
 
       </section>
 
-
       <!-- ===================================
            詳細設定
       ==================================== -->
@@ -2552,7 +2500,6 @@ body.lightTheme #roomName:disabled {
 
   <div class="settingsContent">
 
-
     <!-- ===================================
          STOP設定
     ==================================== -->
@@ -2562,8 +2509,6 @@ body.lightTheme #roomName:disabled {
       <h2 class="settingsGroupTitle">
         STOP設定
       </h2>
-
- 
 
 <div class="settingsGroupCards">
 
@@ -2608,10 +2553,6 @@ body.lightTheme #roomName:disabled {
 
         </section>
 
-
-        
-
-
         <!-- パソコン設定 -->
 
         <section
@@ -2647,8 +2588,6 @@ body.lightTheme #roomName:disabled {
                 Space
               </option>
 
-            
-
               <option value="Enter">
                 Enter
               </option>
@@ -2674,7 +2613,6 @@ body.lightTheme #roomName:disabled {
       </p>
 
     </section>
-
 
     <!-- ===================================
      走行速度設定
@@ -2746,7 +2684,7 @@ body.lightTheme #roomName:disabled {
             <input
               id="themeModeToggle"
               type="checkbox"
-         
+
             >
 
             <span
@@ -2764,17 +2702,13 @@ body.lightTheme #roomName:disabled {
 
       </div>
 
- 
-
     </section>
-
 
   </div>
 
 </details>
 
     </section>
-
 
     <!-- =====================================
          状態・映像
@@ -2794,7 +2728,6 @@ body.lightTheme #roomName:disabled {
 
 </div>
 
-
       <!-- 映像・ジョイスティック・STOPボタン -->
 
       <div id="videoWrapper">
@@ -2807,7 +2740,6 @@ body.lightTheme #roomName:disabled {
           class="hidden"
         ></video>
 
-
         <div id="joystickArea">
           <div id="joystickKnob"></div>
         </div>
@@ -2818,7 +2750,6 @@ body.lightTheme #roomName:disabled {
         >
           <div class="fullscreenHoldLabel">長押し中</div>
         </div>
-
 
         <button
           id="driveStopButton"
@@ -2838,9 +2769,6 @@ body.lightTheme #roomName:disabled {
           </span>
 
         </button>
-
-              
-
 
         <!-- PC用：全画面表示ボタン -->
         <button
@@ -2872,20 +2800,11 @@ body.lightTheme #roomName:disabled {
 
         </button>
 
-
       </div>
-
-    
 
     </section>
 
-
-
-
   </main>
-
-
- 
 
   <script>
     "use strict";
@@ -2946,8 +2865,6 @@ const fullscreenHoldIndicator =
 
     const settingsPanel =
   document.getElementById("settingsPanel");
-
-
 
 const driveStopButtonText =
   document.getElementById("driveStopButtonText");
@@ -3070,8 +2987,6 @@ let stopEditStartLeft = 0;
 let stopEditStartTop = 0;
 let stopEditStartWidth = 0;
 let stopEditStartHeight = 0;
-
-
 
     const joystickRadius = 70;
     const knobRadius = 25;
@@ -3199,7 +3114,6 @@ function updateAllDisconnectButtonAvailability() {
     !bleActive;
 }
 
-
 /*
   AtomS3 LiteとのBLE接続が切れたとき
 */
@@ -3218,7 +3132,6 @@ function handleBleDisconnected() {
   driveStatusElement.textContent =
     "機器とのBLE接続が切断されました。";
 }
-
 
 /*
   AtomS3 LiteへBLE接続する
@@ -3368,7 +3281,6 @@ async function connectBleDevice() {
   }
 }
 
-
 /*
   AtomS3 LiteとのBLE接続を終了する
 */
@@ -3419,7 +3331,115 @@ function toggleBleConnection() {
 
   connectBleDevice();
 }
-    
+
+/* ======================================
+   操縦用DataChannel 共通処理
+====================================== */
+function isDriveChannelOpen() {
+  return Boolean(
+    driveChannel &&
+    driveChannel.readyState === "open"
+  );
+}
+
+function sendDriveChannelPayload(payload) {
+  if (!isDriveChannelOpen()) {
+    return false;
+  }
+
+  driveChannel.send(JSON.stringify(payload));
+  return true;
+}
+
+function closeDriveChannelSafely() {
+  if (!driveChannel) {
+    return;
+  }
+
+  driveChannel.onopen = null;
+  driveChannel.onclosing = null;
+  driveChannel.onclose = null;
+  driveChannel.onerror = null;
+  driveChannel.onmessage = null;
+
+  if (driveChannel.readyState !== "closed") {
+    try {
+      driveChannel.close();
+    } catch (error) {
+      console.warn("DataChannelを閉じられませんでした。", error);
+    }
+  }
+
+  driveChannel = null;
+}
+
+function closePeerConnectionSafely() {
+  if (!peerConnection) {
+    return;
+  }
+
+  peerConnection.onicecandidate = null;
+  peerConnection.ondatachannel = null;
+  peerConnection.ontrack = null;
+  peerConnection.onconnectionstatechange = null;
+
+  try {
+    peerConnection.close();
+  } catch (error) {
+    console.warn("WebRTC接続を閉じられませんでした。", error);
+  }
+
+  peerConnection = null;
+}
+
+function configureDriveChannel(channel, sideLabel, onConnected) {
+  driveChannel = channel;
+
+  const handleOpen = () => {
+    console.log(`${sideLabel} DataChannel 接続`, driveChannel.readyState);
+
+    driveStopButton.disabled = false;
+    startDriveCommunicationWatchdog();
+
+    if (driveStopped) {
+      sendEmergencyStopMessage("emergency-stop");
+      sendStopCommand();
+    }
+
+    headerBadgeDot.classList.remove("connecting");
+    headerBadgeDot.classList.add("connected");
+
+    onConnected();
+
+    if (settingsPanel.open) {
+      stopDrivingForSettings();
+    }
+  };
+
+  if (driveChannel.readyState === "open") {
+    handleOpen();
+  } else {
+    driveChannel.onopen = handleOpen;
+  }
+
+  driveChannel.onclosing = () => {
+    console.log(`${sideLabel} DataChannel closing`);
+    activateCommunicationLossStop();
+  };
+
+  driveChannel.onclose = () => {
+    console.log(`${sideLabel} DataChannel 切断`);
+    activateCommunicationLossStop();
+  };
+
+  driveChannel.onerror = error => {
+    console.error(`${sideLabel} DataChannel error`, error);
+    activateCommunicationLossStop();
+  };
+
+  driveChannel.onmessage = handleDriveChannelMessage;
+}
+
 /*
   相手からDataChannelのデータを受け取った時刻を更新する。
   通信が戻っても安全のためSTOP状態は自動解除しない。
@@ -3434,23 +3454,12 @@ function markDriveCommunicationReceived() {
   一度STOPした後は，利用者が明示的に「解除」を押すまで再開しない。
 */
 function sendEmergencyStopMessage(type) {
-  if (
-    !driveChannel ||
-    driveChannel.readyState !== "open"
-  ) {
-    return false;
-  }
-
   driveSequence++;
 
-  driveChannel.send(
-    JSON.stringify({
-      type: type,
-      sequence: driveSequence
-    })
-  );
-
-  return true;
+  return sendDriveChannelPayload({
+    type,
+    sequence: driveSequence
+  });
 }
 
 function applyEmergencyStopState(options = {}) {
@@ -3625,65 +3634,19 @@ function setControlsConnected() {
       peerConnection = new RTCPeerConnection(rtcConfiguration);
 
       if (role === "sender") {
+        const senderDriveChannel =
+          peerConnection.createDataChannel("drive");
 
-  driveChannel =
-    peerConnection.createDataChannel("drive");
-
-  console.log(
-    "iPhone側でDataChannel作成直後",
-    driveChannel.readyState
-  );
-
-  driveChannel.onopen = () => {
-  console.log("送り手側 DataChannel 接続");
-  console.log("送り手側の状態", driveChannel.readyState);
-
-  driveStopButton.disabled = false;
-  startDriveCommunicationWatchdog();
-
-  if (driveStopped) {
-    sendEmergencyStopMessage("emergency-stop");
-    sendStopCommand();
-  }
-
-      headerBadgeDot.classList.remove(
-    "connecting"
-  );
-
-  headerBadgeDot.classList.add(
-    "connected"
-  );
-
-  driveStatusElement.textContent =
-    "操縦接続が完了しました。\n" +
-    "STOPを使用できます。";
-
-if (settingsPanel.open) {
-  stopDrivingForSettings();
-}
-    
-};
-
-  driveChannel.onclosing = () => {
-    console.log("iPhone側 DataChannel closing");
-    activateCommunicationLossStop();
-  };
-
-  driveChannel.onclose = () => {
-    console.log("iPhone側 DataChannel 切断");
-    activateCommunicationLossStop();
-  };
-
-  driveChannel.onerror = error => {
-    console.error("iPhone側 DataChannel error", error);
-    activateCommunicationLossStop();
-  };
-
-  driveChannel.onmessage = handleDriveChannelMessage;
-
-}
-
-      
+        configureDriveChannel(
+          senderDriveChannel,
+          "iPhone側",
+          () => {
+            driveStatusElement.textContent =
+              "操縦接続が完了しました。\n" +
+              "STOPを使用できます。";
+          }
+        );
+      }
 
       peerConnection.onicecandidate = event => {
         if (!event.candidate) {
@@ -3697,73 +3660,18 @@ if (settingsPanel.open) {
       };
 
   peerConnection.ondatachannel = event => {
+    configureDriveChannel(
+      event.channel,
+      "PC側",
+      () => {
+        sendStopCommand();
 
-  driveChannel = event.channel;
-
-  console.log(
-    "PC側でDataChannelを受信",
-    driveChannel.readyState
-  );
-
-  const initializePcDriveChannel = () => {
-  console.log("受け手側 DataChannel 接続");
-  console.log(
-    "受け手側の状態",
-    driveChannel.readyState
-  );
-
-  driveStopButton.disabled = false;
-  startDriveCommunicationWatchdog();
-
-  if (driveStopped) {
-    sendEmergencyStopMessage("emergency-stop");
-    sendStopCommand();
-  }
-
-      headerBadgeDot.classList.remove(
-    "connecting"
-  );
-
-  headerBadgeDot.classList.add(
-    "connected"
-  );
-
-  // 接続直後はX=0，Y=0を送る
-  sendStopCommand();
-
-  driveStatusElement.textContent =
-    "操縦接続が完了しました。\n" +
-    "停止位置から開始します。";
-
-  if (settingsPanel.open) {
-    stopDrivingForSettings();
-  }
-};
-
-if (driveChannel.readyState === "open") {
-  initializePcDriveChannel();
-} else {
-  driveChannel.onopen = initializePcDriveChannel;
-}
-
-  driveChannel.onclosing = () => {
-    console.log("PC側 DataChannel closing");
-    activateCommunicationLossStop();
+        driveStatusElement.textContent =
+          "操縦接続が完了しました。\n" +
+          "停止位置から開始します。";
+      }
+    );
   };
-
-  driveChannel.onclose = () => {
-    console.log("PC側 DataChannel 切断");
-    activateCommunicationLossStop();
-  };
-
-  driveChannel.onerror = error => {
-    console.error("PC側 DataChannel error", error);
-    activateCommunicationLossStop();
-  };
-
-    driveChannel.onmessage = handleDriveChannelMessage;
-
-};
 
 peerConnection.ontrack = event => {
   if (role !== "viewer") {
@@ -3806,18 +3714,17 @@ videoElement.play()
       peerConnection.onconnectionstatechange = () => {
 
         console.log("Ver 6");
-        
+
         const state = peerConnection.connectionState;
 
         if (state === "connected") {
 
           console.log("★★★ connected ★★★");
-          
 
 if (driveChannel) {
     console.log("状態", driveChannel.readyState);
 }
-          
+
           setStatus(
             role === "sender"
               ? "接続成功：iPhoneの映像を送信しています。"
@@ -3874,43 +3781,12 @@ function rebuildPeerConnectionForReconnect() {
   currentDriveX = 0;
   currentDriveY = 0;
 
-  if (driveChannel) {
-    driveChannel.onopen = null;
-    driveChannel.onclosing = null;
-    driveChannel.onclose = null;
-    driveChannel.onerror = null;
-    driveChannel.onmessage = null;
-
-    if (
-      driveChannel.readyState !== "closed"
-    ) {
-      try {
-        driveChannel.close();
-      } catch {
-        // すでに閉じている場合は無視
-      }
-    }
-
-    driveChannel = null;
-  }
+  closeDriveChannelSafely();
 
   /*
     古いRTCPeerConnectionを閉じる。
   */
-  if (peerConnection) {
-    peerConnection.onicecandidate = null;
-    peerConnection.ondatachannel = null;
-    peerConnection.ontrack = null;
-    peerConnection.onconnectionstatechange = null;
-
-    try {
-      peerConnection.close();
-    } catch {
-      // すでに閉じている場合は無視
-    }
-
-    peerConnection = null;
-  }
+  closePeerConnectionSafely();
 
   offerStarted = false;
 
@@ -4381,10 +4257,7 @@ function disconnectBoth() {
 
   // WebRTCのDataChannelが開いていれば，
   // 相手へ切断要求を送り，確認応答を待つ
-  if (
-    driveChannel &&
-    driveChannel.readyState === "open"
-  ) {
+  if (isDriveChannelOpen()) {
     disconnectRequestPending = true;
 
     driveChannel.send(
@@ -4411,8 +4284,6 @@ function disconnectBoth() {
   stopAll(true);
 }
 
-
-    
       function stopAll(
         showMessage = true,
         options = {}
@@ -4448,24 +4319,8 @@ function disconnectBoth() {
         socket = null;
       }
 
-      if (driveChannel) {
-        driveChannel.onopen = null;
-        driveChannel.onclosing = null;
-        driveChannel.onclose = null;
-        driveChannel.onerror = null;
-        driveChannel.onmessage = null;
-
-        if (driveChannel.readyState !== "closed") {
-          driveChannel.close();
-        }
-
-        driveChannel = null;
-      }
-
-      if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-      }
+      closeDriveChannelSafely();
+      closePeerConnectionSafely();
 
       if (localStream) {
         for (const track of localStream.getTracks()) {
@@ -4518,8 +4373,6 @@ hideMobileFullscreenButton();
 videoWrapper.addEventListener(
   "pointerdown",
   event => {
-
-   
 
     /*
       STOPボタンや全画面ボタン自体を押した場合は，
@@ -4705,7 +4558,7 @@ function updateAndRepeatDriveCoordinates(x, y) {
     transmitCurrentDriveCoordinates();
   }, DRIVE_COMMAND_REPEAT_INTERVAL_MS);
 }
-    
+
    function sendStopCommand() {
   stopDriveCommandRepeater();
   currentDriveX = 0;
@@ -4735,8 +4588,6 @@ function updateAndRepeatDriveCoordinates(x, y) {
   少し間隔を空けて合計3回送る
 */
 sendStopToBleWithRetry();
-
-
 
   if (
     driveChannel &&
@@ -4949,7 +4800,7 @@ function sendSettingsState(active) {
     JSON.stringify(settingsStateData)
   );
 }
-    
+
 function sendDriveStopState(stopped) {
   return sendEmergencyStopMessage(
     stopped
@@ -4957,7 +4808,6 @@ function sendDriveStopState(stopped) {
       : "emergency-stop-release"
   );
 }
-
 
 function cancelRemoteStopResend() {
   if (remoteStopResendTimer1 !== null) {
@@ -5000,7 +4850,7 @@ function cancelRemoteStopResend() {
     sendCoordinatesToBle(0, 0);
   }, 250);
 }
-    
+
 /*
   操縦座標をAtomS3 LiteへBLE送信する。
   WebRTCの送信側・受信側，PC・iPhoneに関係なく，
@@ -5086,16 +4936,9 @@ async function processBleCoordinateQueue() {
 if (command.type === "disconnect-all") {
 
   // 回線を閉じる前に，受信確認を返信する
-  if (
-    driveChannel &&
-    driveChannel.readyState === "open"
-  ) {
-    driveChannel.send(
-      JSON.stringify({
-        type: "disconnect-ack"
-      })
-    );
-  }
+  sendDriveChannelPayload({
+    type: "disconnect-ack"
+  });
 
   setStatus(
     "相手側が接続を終了しました。\n" +
@@ -5148,7 +4991,6 @@ if (command.type === "settings-state") {
 
   return;
 }
-
 
 // 非常停止を受信した場合
 if (command.type === "emergency-stop") {
@@ -5257,7 +5099,6 @@ if (command.type === "drive") {
       return;
     }
 
-
     /*
       指を置いた位置から
       どれだけ動いたかを調べる
@@ -5268,7 +5109,6 @@ if (command.type === "drive") {
         event.clientX - joystickPointerStartX,
         event.clientY - joystickPointerStartY
       );
-
 
     /*
       12px未満は手指の揺れとして扱う
@@ -5281,7 +5121,6 @@ if (command.type === "drive") {
     ) {
       return;
     }
-
 
     /*
       初めて動いた時点で，
@@ -5301,9 +5140,7 @@ if (command.type === "drive") {
       joystickArea.style.display = "block";
     }
 
-
     event.preventDefault();
-
 
     const rect =
       videoWrapper.getBoundingClientRect();
@@ -5323,7 +5160,6 @@ if (command.type === "drive") {
     const distance =
       Math.hypot(dx, dy);
 
-
     /*
       ノブが外周を越えないようにする
     */
@@ -5339,13 +5175,11 @@ if (command.type === "drive") {
         maxKnobDistance;
     }
 
-
     joystickKnob.style.left =
       (joystickRadius + dx) + "px";
 
     joystickKnob.style.top =
       (joystickRadius + dy) + "px";
-
 
     const x =
       dx / maxKnobDistance;
@@ -5353,11 +5187,9 @@ if (command.type === "drive") {
     const y =
       -dy / maxKnobDistance;
 
-
     xyDisplay.textContent =
       "X：" + x.toFixed(2) +
       "　Y：" + y.toFixed(2);
-
 
     const roundedX = Number(x.toFixed(2));
     const roundedY = Number(y.toFixed(2));
@@ -5374,8 +5206,6 @@ updateAndRepeatDriveCoordinates(
   }
 );
 
-
-  
 /*
   ジョイスティック操作または候補状態を終了する
 */
@@ -5391,13 +5221,11 @@ function finishJoystickPointer(
     return;
   }
 
-
   /*
   操作量に関係なく，
   マウスまたは指を離したら必ず停止座標を送る
 */
 sendStopCommand();
-
 
   joystickCandidate = false;
   joystickActive = false;
@@ -5410,7 +5238,6 @@ sendStopCommand();
 
   xyDisplay.textContent =
     "X：0.00　Y：0.00";
-
 
   try {
 
@@ -5433,14 +5260,12 @@ sendStopCommand();
   }
 }
 
-
 videoWrapper.addEventListener(
   "pointerup",
   event => {
     finishJoystickPointer(event, false);
   }
 );
-
 
 videoWrapper.addEventListener(
   "pointercancel",
@@ -5534,7 +5359,7 @@ videoWrapper.addEventListener(
     event.preventDefault();
   }
 );
-    
+
 sendButton.addEventListener(
   "click",
   startSender
@@ -5608,7 +5433,6 @@ let stopButtonGeometry = {
 
 let videoWasPlayingBeforeStopEdit = false;
 
-
 /*
   数値を指定範囲内へ収める
 */
@@ -5622,7 +5446,6 @@ function clampStopEditValue(
     Math.max(minimum, value)
   );
 }
-
 
 /*
   保存されている大きさと位置を画面へ反映する
@@ -5712,7 +5535,6 @@ videoWrapper.style.setProperty(
   `${heightPx}px`
 );
 
-
 /*
   以前の直接指定が残っている場合に備えて解除する
 */
@@ -5721,7 +5543,6 @@ driveStopButton.style.removeProperty("top");
 driveStopButton.style.removeProperty("width");
 driveStopButton.style.removeProperty("height");
 }
-
 
 /*
   レイアウト変更が完了したあとに再反映する
@@ -5777,7 +5598,6 @@ if (window.ResizeObserver) {
   );
 }
 
-
 /*
   位置・サイズをブラウザへ保存する
 */
@@ -5788,7 +5608,6 @@ function saveStopButtonGeometry() {
     JSON.stringify(stopButtonGeometry)
   );
 }
-
 
 /*
   保存済みの位置・サイズを読み込む
@@ -5854,7 +5673,6 @@ function loadStopButtonGeometry() {
   scheduleStopButtonGeometryApply();
 }
 
-
 /*
   STOPボタン編集を開始
 */
@@ -5897,7 +5715,6 @@ function startStopButtonEditor() {
   driveStatusElement.textContent =
     "STOPボタン編集中です。ドラッグで移動し，右下の矢印で大きさを変更できます。";
 }
-
 
 /*
   STOPボタン編集を終了
@@ -5946,10 +5763,6 @@ async function finishStopButtonEditor() {
   driveStatusElement.textContent =
     "STOPボタンの位置と大きさを保存しました。";
 }
-
-
-
-
 
 /*
   STOPボタン本体を押したとき，
@@ -6001,7 +5814,6 @@ driveStopButton.setPointerCapture(
   }
 );
 
-
 /*
   右下の矢印を押したとき，
   サイズ変更を開始
@@ -6046,7 +5858,6 @@ stopEditStartHeight =
   }
 );
 
-
 /*
   マウスまたは指を動かしたとき，
   移動・サイズ変更を反映
@@ -6079,7 +5890,6 @@ window.addEventListener(
 
     const deltaY =
       event.clientY - stopEditStartY;
-
 
     /*
       STOPボタンの移動
@@ -6127,7 +5937,6 @@ stopButtonGeometry.yRatio =
 
 applyStopButtonGeometry();
     }
-
 
     /*
       STOPボタンのサイズ変更
@@ -6186,7 +5995,6 @@ stopButtonGeometry.widthPx =
 stopButtonGeometry.heightPx =
   newHeightPx;
 
-
 /*
   サイズ変更により移動可能範囲が変わるため，
   現在位置も新しい範囲に対する割合へ更新する
@@ -6237,7 +6045,6 @@ applyStopButtonGeometry();
   { passive: false }
 );
 
-
 /*
   マウスまたは指を離したら編集操作を終了
 */
@@ -6261,9 +6068,6 @@ window.addEventListener(
   finishStopEditPointerAction
 );
 
-
-
-    
 stopButton.addEventListener(
   "click",
   disconnectBoth
@@ -6293,7 +6097,6 @@ let mobileFullscreenHoldTriggered = false;
 
 let mobileFullscreenHideTimer = null;
 
-
 /*
   右下を3秒間押し続けると，
   全画面アイコンを表示する
@@ -6316,7 +6119,6 @@ const MOBILE_FULLSCREEN_LOCK_MS = 1000;
 let mobileFullscreenButtonLocked = false;
 let mobileFullscreenLockTimer = null;
 
-
 /*
   iPhoneなどの画面幅かどうか
 */
@@ -6330,7 +6132,6 @@ function isMobileFullscreenLayout() {
   );
 }
 
-
 /*
   右下長押し専用サインを消す
 */
@@ -6343,7 +6144,6 @@ function hideFullscreenHoldIndicator() {
   fullscreenHoldIndicator.style.opacity = "1";
   fullscreenHoldIndicator.style.filter = "";
 }
-
 
 /*
   右下長押し判定を中止する
@@ -6363,7 +6163,6 @@ function cancelMobileFullscreenHold() {
   mobileFullscreenHoldTriggered = false;
   hideFullscreenHoldIndicator();
 }
-
 
 /*
   送信側・受信側のどちらでも，
@@ -6463,7 +6262,6 @@ function startMobileFullscreenHold(event) {
   );
 }
 
-
 videoWrapper.addEventListener(
   "pointermove",
   event => {
@@ -6492,7 +6290,6 @@ videoWrapper.addEventListener(
   }
 );
 
-
 function finishMobileFullscreenHold(event) {
   if (
     mobileFullscreenHoldPointerId !==
@@ -6509,7 +6306,6 @@ function finishMobileFullscreenHold(event) {
   mobileFullscreenHoldPointerId = null;
 }
 
-
 videoWrapper.addEventListener(
   "pointerup",
   finishMobileFullscreenHold
@@ -6520,7 +6316,6 @@ videoWrapper.addEventListener(
   finishMobileFullscreenHold
 );
 
-
 /*
   iPhone用の疑似全画面中かどうか
 */
@@ -6530,7 +6325,6 @@ function isMobilePseudoFullscreen() {
     "mobilePseudoFullscreen"
   );
 }
-
 
 /*
   全画面アイコンの表示を更新
@@ -6592,7 +6386,6 @@ function updateFullscreenIcon(isFullscreen) {
   }
 }
 
-
 /*
   iPhone用の全画面アイコンを隠す
 */
@@ -6608,7 +6401,6 @@ function hideMobileFullscreenButton() {
     "mobileFullscreenVisible"
   );
 }
-
 
 /*
   iPhone用の全画面アイコンを数秒だけ表示
@@ -6654,7 +6446,6 @@ function showMobileFullscreenButton() {
     MOBILE_FULLSCREEN_LOCK_MS
   );
 
-
   /*
     数秒後に全画面アイコンを隠す
   */
@@ -6669,7 +6460,6 @@ function showMobileFullscreenButton() {
   );
 }
 
-
 /*
   全画面へ入る直前に
   現在のSTOPボタン設定を保存する
@@ -6677,7 +6467,6 @@ function showMobileFullscreenButton() {
 function preserveStopButtonSize() {
   saveStopButtonGeometry();
 }
-
 
 /*
   通常画面へ戻ったあとの
@@ -6730,7 +6519,6 @@ function updateMobilePseudoFullscreenViewport() {
     return;
   }
 
-
   /*
     visualViewportがないブラウザ用
   */
@@ -6755,7 +6543,7 @@ function updateMobilePseudoFullscreenViewport() {
     `${window.innerHeight}px`
   );
 }
-    
+
 function enterMobilePseudoFullscreen() {
 
   preserveStopButtonSize();
@@ -6777,7 +6565,6 @@ function enterMobilePseudoFullscreen() {
 
   updateFullscreenIcon(true);
 
-
   /*
     Chromeでは疑似全画面へ切り替えた直後に
     表示領域が変化することがあるため再取得する
@@ -6798,7 +6585,6 @@ function enterMobilePseudoFullscreen() {
   );
 }
 
-
 /*
   iPhone用の疑似全画面を終了
 */
@@ -6812,7 +6598,6 @@ function exitMobilePseudoFullscreen() {
   document.body.classList.remove(
     "mobilePseudoFullscreenActive"
   );
-
 
   /*
     疑似全画面用に設定した画面サイズを解除する
@@ -6834,11 +6619,9 @@ function exitMobilePseudoFullscreen() {
     "--mobile-viewport-height"
   );
 
-
   restoreStopButtonSize();
   updateFullscreenIcon(false);
 }
-
 
 /*
   全画面と通常表示を切り替える
@@ -6858,7 +6641,6 @@ async function togglePcFullscreen() {
       return;
     }
 
-
     /*
       本当の全画面表示中なら戻す
     */
@@ -6872,7 +6654,6 @@ async function togglePcFullscreen() {
       return;
     }
 
-
     /*
       別の要素が全画面なら終了する
     */
@@ -6881,14 +6662,12 @@ async function togglePcFullscreen() {
       await document.exitFullscreen();
     }
 
-
     /*
       全画面になる直前の
       STOPボタンの大きさを保存
     */
 
     preserveStopButtonSize();
-
 
   /*
   iPhoneなどのタッチ端末では，
@@ -6904,7 +6683,6 @@ if (isMobileFullscreenLayout()) {
 
   return;
 }
-
 
     /*
       PCでは本当の全画面表示
@@ -6926,7 +6704,6 @@ if (isMobileFullscreenLayout()) {
     );
   }
 }
-
 
 /*
   全画面ボタンを押したとき，
@@ -6953,7 +6730,6 @@ pcFullscreenButton.addEventListener(
   }
 );
 
-
 pcFullscreenButton.addEventListener(
   "click",
   event => {
@@ -6976,9 +6752,6 @@ pcFullscreenButton.addEventListener(
     togglePcFullscreen();
   }
 );
-
-
-
 
 /*
   本当の全画面表示が変化したとき
@@ -7109,12 +6882,10 @@ function refreshMobileFullscreenAfterRotation() {
   );
 }
 
-
 window.addEventListener(
   "orientationchange",
   refreshMobileFullscreenAfterRotation
 );
-
 
 /*
   iPhone Safariではorientationchange以外に，
@@ -7180,7 +6951,6 @@ function applyStopButtonVisibility() {
     shouldShow ? "表示" : "非表示";
 }
 
-    
 function loadSettings() {
 
   const savedPcKey =
@@ -7205,7 +6975,6 @@ function loadSettings() {
   applyStopButtonVisibility();
 }
 
-
 function saveSettings() {
 
   localStorage.setItem(
@@ -7218,7 +6987,6 @@ function saveSettings() {
     String(stopButtonVisibleToggle.checked)
   );
 }
-
 
 // ----------
 // 変更されたら保存
@@ -7240,7 +7008,7 @@ stopButtonVisibleToggle.addEventListener(
     saveSettings();
   }
 );
-    
+
 // ======================================
 // パソコンのキーによるSTOP・解除
 // ======================================
