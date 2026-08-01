@@ -262,10 +262,17 @@ if (
       */
       updateDriveStopButtonAvailability();
 
+      /*
+        詳細設定を閉じたことは，
+        非常停止状態に関係なく相手へ通知する。
+      */
+      sendSettingsState(false);
+
+      /*
+        詳細設定終了後も非常停止は自動解除しない。
+        利用者が「解除」を押したときだけ解除する。
+      */
       if (driveStopped) {
-
-        sendSettingsState(false);
-
         driveStatusElement.textContent =
           "詳細設定を終了しました。「解除」を押すと操縦を再開できます。";
       }
@@ -1202,9 +1209,22 @@ if (window.visualViewport) {
   );
 }
 
-    window.addEventListener("beforeunload", () => {
-      stopAll(false);
-    });
+window.addEventListener(
+  "beforeunload",
+  () => {
+    /*
+      ページ離脱時も非常停止状態を解除しない。
+      相手側ではWebSocket切断・peer-leftにより
+      非常停止状態へ移行する。
+    */
+    stopAll(
+      false,
+      {
+        preserveEmergencyStop: true
+      }
+    );
+  }
+);
 
     // ======================================
 // 詳細設定の保存
