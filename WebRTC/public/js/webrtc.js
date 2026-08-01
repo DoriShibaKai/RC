@@ -32,128 +32,158 @@ function getRoomName() {
 
 
 function createPeerConnection() {
+  console.log("createPeerConnection開始");
 
-      console.log("createPeerConnection開始");
-      peerConnection = new RTCPeerConnection(rtcConfiguration);
+  const connection =
+    new RTCPeerConnection(rtcConfiguration);
 
-      if (role === "sender") {
-        const senderDriveChannel =
-          peerConnection.createDataChannel("drive");
+  peerConnection = connection;
 
-        configureDriveChannel(
-          senderDriveChannel,
-          "iPhone側",
-          () => {
-            driveStatusElement.textContent =
-              "操縦接続が完了しました。\n" +
-              "STOPを使用できます。";
-          }
-        );
+  if (role === "sender") {
+    const senderDriveChannel =
+      connection.createDataChannel("drive");
+
+    configureDriveChannel(
+      senderDriveChannel,
+      "iPhone側",
+      () => {
+        driveStatusElement.textContent =
+          driveStopped
+            ? "操縦接続が復旧しました。非常停止状態を保持しています。"
+            : "操縦接続が完了しました。\nSTOPを使用できます。";
       }
+    );
+  }
 
-      peerConnection.onicecandidate = event => {
-        if (!event.candidate) {
-          return;
-        }
+  connection.onicecandidate = event => {
+    if (!event.candidate) {
+      return;
+    }
 
-        sendSignal({
-          type: "ice-candidate",
-          candidate: event.candidate
-        });
-      };
+    sendSignal({
+      type: "ice-candidate",
+      candidate: event.candidate
+    });
+  };
 
-  peerConnection.ondatachannel = event => {
+  connection.ondatachannel = event => {
     configureDriveChannel(
       event.channel,
       "PC側",
       () => {
+        /*
+          接続直後は必ず停止座標を送る。
+          非常停止中なら「解除」表示を保持したままにする。
+        */
         sendStopCommand();
 
         driveStatusElement.textContent =
-          "操縦接続が完了しました。\n" +
-          "停止位置から開始します。";
+          driveStopped
+            ? "操縦接続が復旧しました。非常停止状態を保持しています。"
+            : "操縦接続が完了しました。\n停止位置から開始します。";
       }
     );
   };
 
-peerConnection.ontrack = event => {
-  if (role !== "viewer") {
-    return;
-  }
-
-  const [remoteStream] = event.streams;
-
-  if (remoteStream) {
-    videoElement.srcObject = remoteStream;
-  } else {
-    const stream = new MediaStream();
-    stream.addTrack(event.track);
-    videoElement.srcObject = stream;
-  }
-
- videoElement.muted = false;
-videoElement.classList.remove("hidden");
-
-/*
-  映像が表示されたあとのvideoWrapperサイズで，
-  STOPボタンを再配置する
-*/
-scheduleStopButtonGeometryApply();
-
-videoElement.play()
-  .then(() => {
-    scheduleStopButtonGeometryApply();
-  })
-  .catch(() => {
-    scheduleStopButtonGeometryApply();
-
-    setStatus(
-      "映像を受信しました。\n" +
-      "再生されない場合は、黒い映像部分を一度押してください。"
-    );
-  });
-};
-
-      peerConnection.onconnectionstatechange = () => {
-
-        console.log("Ver 6");
-
-        const state = peerConnection.connectionState;
-
-        if (state === "connected") {
-
-          console.log("★★★ connected ★★★");
-
-if (driveChannel) {
-    console.log("状態", driveChannel.readyState);
-}
-
-          setStatus(
-            role === "sender"
-              ? "接続成功：iPhoneの映像を送信しています。"
-              : "接続成功：iPhoneの映像を受信しています。"
-          );
-        } else if (state === "disconnected") {
-          activateCommunicationLossStop(
-            "WebRTC通信が一時的に切断されました。"
-          );
-          setStatus("通信が一時的に切断され，自動STOPしました。");
-        } else if (state === "failed") {
-          activateCommunicationLossStop(
-            "WebRTC接続に失敗しました。"
-          );
-          setStatus(
-            "WebRTC接続に失敗しました。\n" +
-            "いったん接続を終了し、両方でやり直してください。"
-          );
-        } else if (state === "closed") {
-          setStatus("接続を終了しました。");
-        }
-      };
-
-      return peerConnection;
+  connection.ontrack = event => {
+    if (role !== "viewer") {
+      return;
     }
 
+    const [remoteStream] = event.streams;
+
+    if (remoteStream) {
+      videoElement.srcObject = remoteStream;
+    } else {
+      const stream = new MediaStream();
+      stream.addTrack(event.track);
+      videoElement.srcObject = stream;
+    }
+
+    videoElement.muted = false;
+    videoElement.classList.remove("hidden");
+
+    scheduleStopButtonGeometryApply();
+
+    videoElement.play()
+      .then(() => {
+        scheduleStopButtonGeometryApply();
+      })
+      .catch(() => {
+        scheduleStopButtonGeometryApply();
+
+        setStatus(
+          "映像を受信しました。\n" +
+          "再生されない場合は、黒い映像部分を一度押してください。"
+        );
+      });
+  };
+
+  connection.onconnectionstatechange = () => {
+    /*
+      古いRTCPeerConnectionの遅延イベントは無視する。
+    */
+    if (peerConnection !== connection) {
+      return;
+    }
+
+    const state = connection.connectionState;
+
+    console.log(
+      "WebRTC connectionState:",
+      state
+    );
+
+    if (state === "connected") {
+      setStatus(
+        role === "sender"
+          ? "接続成功：iPhoneの映像を送信しています。"
+          : "接続成功：iPhoneの映像を受信しています。"
+      );
+
+      /*
+        接続が復旧しても非常停止は自動解除しない。
+        DataChannelが開いた時点で相手にも状態を再通知する。
+      */
+      if (driveStopped) {
+        applyDriveStopState(true);
+      }
+
+      return;
+    }
+
+    if (state === "disconnected") {
+      activateCommunicationLossStop(
+        "WebRTC通信が一時的に切断されました。"
+      );
+
+      setStatus(
+        "通信が一時的に切断され、安全のため自動STOPしました。"
+      );
+
+      return;
+    }
+
+    if (state === "failed") {
+      activateCommunicationLossStop(
+        "WebRTC接続に失敗しました。"
+      );
+
+      setStatus(
+        "WebRTC接続に失敗しました。\n" +
+        "安全のためSTOP状態を保持しています。"
+      );
+
+      return;
+    }
+
+    if (state === "closed" && role !== null) {
+      setStatus("WebRTC接続が終了しました。");
+    }
+  };
+
+  return connection;
+}
 
 function sendSignal(data) {
   if (
@@ -617,7 +647,9 @@ createPeerConnection();
           "カメラを開始できませんでした。\n" +
           error.message
         );
-        stopAll(false);
+        stopAll(false, {
+          preserveEmergencyStop: driveStopped
+        });
       }
     }
 
@@ -649,34 +681,33 @@ setControlsConnected();
           "受信を開始できませんでした。\n" +
           error.message
         );
-        stopAll(false);
+        stopAll(false, {
+          preserveEmergencyStop: driveStopped
+        });
       }
     }
 
 
 function disconnectBoth() {
-
-  // 二重送信を防ぐ
+  /*
+    ユーザーが明示的に「すべて切断」を押した場合。
+    この場合だけ、非常停止状態を通常の初期状態へ戻してよい。
+  */
   if (disconnectRequestPending) {
     return;
   }
 
-  // WebRTCのDataChannelが開いていれば，
-  // 相手へ切断要求を送り，確認応答を待つ
   if (isDriveChannelOpen()) {
     disconnectRequestPending = true;
 
-    driveChannel.send(
-      JSON.stringify({
-        type: "disconnect-all"
-      })
-    );
+    sendDriveChannelPayload({
+      type: "disconnect-all"
+    });
 
     setStatus(
       "相手側へ切断を通知しています。"
     );
 
-    // 確認応答が来ない場合でも，1.5秒後には終了する
     disconnectAckTimer = setTimeout(() => {
       disconnectAckTimer = null;
       disconnectRequestPending = false;
@@ -686,86 +717,119 @@ function disconnectBoth() {
     return;
   }
 
-  // DataChannelが使えない場合は自分側だけ終了
   stopAll(true);
 }
 
 
 function stopAll(
-        showMessage = true,
-        options = {}
-      ) {
+  showMessage = true,
+  options = {}
+) {
   const {
     preserveEmergencyStop = false
   } = options;
+
   stopDriveCommandRepeater();
+  stopDriveCommunicationWatchdog();
+
   currentDriveX = 0;
   currentDriveY = 0;
 
-  stopDriveCommunicationWatchdog();
+  if (disconnectAckTimer) {
+    clearTimeout(disconnectAckTimer);
+    disconnectAckTimer = null;
+  }
 
-      if (disconnectAckTimer) {
-        clearTimeout(disconnectAckTimer);
-        disconnectAckTimer = null;
-      }
+  disconnectRequestPending = false;
 
-      disconnectRequestPending = false;
+  /*
+    明示的な「すべて切断」のときだけBLEも切断する。
 
-      /*
-        「すべて切断」なので，
-        AtomS3 LiteとのBLE接続も終了する
-      */
-      disconnectBleDevice();
+    Wi-Fi切断、WebSocket切断、peer-leftなどの通信断では、
+    ラジコンへ停止命令を送れるようBLE接続を維持する。
+  */
+  if (!preserveEmergencyStop) {
+    disconnectBleDevice();
+  }
 
-      role = null;
-      offerStarted = false;
+  role = null;
+  offerStarted = false;
 
-      if (socket) {
-        socket.onclose = null;
-        socket.close();
-        socket = null;
-      }
+  if (socket) {
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onerror = null;
+    socket.onclose = null;
 
-      closeDriveChannelSafely();
-      closePeerConnectionSafely();
-
-      if (localStream) {
-        for (const track of localStream.getTracks()) {
-          track.stop();
-        }
-
-        localStream = null;
-      }
-
-      videoElement.pause();
-      videoElement.srcObject = null;
-      videoElement.classList.add("hidden");
-      videoElement.muted = true;
-
-     joystickActive = false;
-joystickCandidate = false;
-joystickPointerId = null;
-
-if (preserveEmergencyStop) {
-  applyDriveStopState(true);
-} else {
-  clearEmergencyStopState({
-    notifyPeer: false,
-    statusMessage: ""
-  });
-}
-joystickArea.style.display = "none";
-cancelMobileFullscreenHold();
-hideMobileFullscreenButton();
-
-      joystickKnob.style.left = "50%";
-      joystickKnob.style.top = "50%";
-
-      xyDisplay.textContent = "X：0.00　Y：0.00";
-
-      setControlsDisconnected();
-
-      if (showMessage) {
-        setStatus("接続を終了しました。");
-      }
+    try {
+      socket.close();
+    } catch (error) {
+      console.warn(
+        "WebSocketを閉じられませんでした。",
+        error
+      );
     }
+
+    socket = null;
+  }
+
+  closeDriveChannelSafely();
+  closePeerConnectionSafely();
+
+  if (localStream) {
+    for (
+      const track
+      of localStream.getTracks()
+    ) {
+      track.stop();
+    }
+
+    localStream = null;
+  }
+
+  videoElement.pause();
+  videoElement.srcObject = null;
+  videoElement.classList.add("hidden");
+  videoElement.muted = true;
+
+  joystickActive = false;
+  joystickCandidate = false;
+  joystickPointerId = null;
+
+  joystickArea.style.display = "none";
+
+  cancelMobileFullscreenHold();
+  hideMobileFullscreenButton();
+
+  joystickKnob.style.left = "50%";
+  joystickKnob.style.top = "50%";
+
+  xyDisplay.textContent =
+    "X：0.00　Y：0.00";
+
+  if (preserveEmergencyStop) {
+    /*
+      通信断後も「解除」表示を保持する。
+      BLEが接続中なら停止座標も改めて送る。
+    */
+    applyEmergencyStopState({
+      notifyPeer: false,
+      statusMessage: ""
+    });
+  } else {
+    /*
+      ユーザーが明示的に接続を終了した場合だけ、
+      通常の「STOP」表示へ戻す。
+    */
+    clearEmergencyStopState({
+      notifyPeer: false,
+      statusMessage: ""
+    });
+  }
+
+  setControlsDisconnected();
+
+  if (showMessage) {
+    setStatus("接続を終了しました。");
+  }
+}
