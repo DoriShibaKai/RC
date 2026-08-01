@@ -1,0 +1,443 @@
+/* index(18) から機能別に整理 */
+
+#stopResizeHandle {
+    display: none;
+    position: absolute;
+    right: 2px;
+    bottom: 0;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px 0 8px 0;
+    background: rgba(0, 0, 0, 0.48);
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+    cursor: nwse-resize;
+    touch-action: none;
+  }
+
+/* ======================================
+   STOPボタン編集中
+====================================== */
+
+/* 編集中は映像を薄くする */
+#videoWrapper.stopButtonEditing video {
+  opacity: 0.48;
+  filter: grayscale(35%);
+  pointer-events: none;
+}
+
+/* 編集中のSTOPボタン */
+#videoWrapper.stopButtonEditing #driveStopButton {
+  opacity: 1;
+  filter: none;
+  cursor: move;
+  touch-action: none;
+
+  border: 3px dashed #ffffff;
+
+  box-shadow:
+    0 0 0 3px rgba(87, 119, 255, 0.9),
+    0 7px 18px rgba(0, 0, 0, 0.46);
+}
+
+/* 右下のサイズ変更ハンドル */
+#videoWrapper.stopButtonEditing #stopResizeHandle {
+  display: flex;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+/* ======================================
+   詳細設定：カード型デザイン完成版
+====================================== */
+
+#settingsPanel {
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(125, 157, 215, 0.28);
+  border-radius: 15px;
+  background: rgba(7, 18, 39, 0.9);
+}
+
+/* 詳細設定の見出し */
+#settingsPanel summary {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 18px;
+  border: 0;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(32, 59, 106, 0.98),
+      rgba(21, 42, 80, 0.98)
+    );
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  list-style: none;
+}
+
+#settingsPanel summary::-webkit-details-marker {
+  display: none;
+}
+
+#settingsPanel summary::before {
+  content: "";
+  width: 21px;
+  height: 21px;
+  margin-right: 11px;
+  background:
+    linear-gradient(#d6e2ff, #d6e2ff) 2px 5px / 16px 2px no-repeat,
+    linear-gradient(#d6e2ff, #d6e2ff) 2px 13px / 16px 2px no-repeat,
+    radial-gradient(circle, #ffffff 0 2px, transparent 2.5px)
+      5px 6px / 7px 7px no-repeat,
+    radial-gradient(circle, #ffffff 0 2px, transparent 2.5px)
+      11px 14px / 7px 7px no-repeat;
+}
+
+#settingsPanel summary::after {
+  content: "⌄";
+  margin-left: auto;
+  color: #d6e2ff;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+#settingsPanel[open] summary {
+  border-bottom: 1px solid rgba(135, 167, 225, 0.24);
+}
+
+#settingsPanel[open] summary::after {
+  transform: rotate(180deg);
+}
+
+/* ======================================
+   詳細設定内の機能グループ
+====================================== */
+
+.settingsGroup {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.settingsGroup + .settingsGroup {
+  margin-top: 7px;
+}
+
+/* STOP設定・背景設定の見出し */
+.settingsGroupTitle {
+  margin: 0 0 8px;
+  padding: 0 3px;
+
+  color: #eef3ff;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+
+/* 同じ設定グループ内のカード */
+.settingsGroupCards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* グループ下の補足 */
+.settingsGroupNote {
+  margin: 7px 4px 0;
+
+  color: #8998b6;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ======================================
+   STOPボタン表示設定
+====================================== */
+
+/* STOPボタン表示カードのアイコン */
+.stopVisibilitySettingsSection::before {
+  content: "■";
+  background: rgba(190, 48, 58, 0.25);
+  color: #ff7078;
+  font-size: 20px;
+}
+
+/* STOPボタン表示カードのスイッチ */
+.stopVisibilityControl {
+  grid-column: 3;
+  grid-row: 1 / 3;
+
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  margin: 0;
+  cursor: pointer;
+}
+
+.stopVisibilityControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stopVisibilitySwitch {
+  position: relative;
+  display: block;
+
+  width: 52px;
+  height: 29px;
+  flex-shrink: 0;
+
+  border: 1px solid rgba(160, 182, 225, 0.36);
+  border-radius: 999px;
+
+  background: #536078;
+
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.stopVisibilitySwitch::after {
+  content: "";
+
+  position: absolute;
+  left: 3px;
+  top: 3px;
+
+  width: 21px;
+  height: 21px;
+
+  border-radius: 50%;
+  background: #ffffff;
+
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.32);
+  transition: transform 0.2s;
+}
+
+/* チェックあり＝STOPボタンを表示 */
+.stopVisibilityControl input:checked +
+.stopVisibilitySwitch {
+  border-color: rgba(103, 141, 255, 0.8);
+  background: #5265ed;
+}
+
+.stopVisibilityControl input:checked +
+.stopVisibilitySwitch::after {
+  transform: translateX(23px);
+}
+
+.stopVisibilityState {
+  min-width: 42px;
+  color: #e8efff;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+/* ライトモード */
+body.lightTheme .stopVisibilityState {
+  color: #344054;
+}
+
+/* ======================================
+   背景設定のトグル
+====================================== */
+
+.themeToggleControl {
+  grid-column: 3;
+  grid-row: 1 / 3;
+
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  gap: 10px;
+
+  margin: 0;
+  cursor: pointer;
+}
+
+/* 実際のチェックボックスを画面外へ隠す */
+.themeToggleControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* トグル本体 */
+.themeToggleSwitch {
+  position: relative;
+
+  display: block;
+  width: 54px;
+  height: 30px;
+  flex-shrink: 0;
+
+  border: 1px solid rgba(160, 182, 225, 0.36);
+  border-radius: 999px;
+
+  background: #273958;
+
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+/* トグルの丸 */
+.themeToggleSwitch::after {
+  content: "";
+
+  position: absolute;
+  left: 3px;
+  top: 3px;
+
+  width: 22px;
+  height: 22px;
+
+  border-radius: 50%;
+  background: #ffffff;
+
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.32);
+
+  transition: transform 0.2s;
+}
+
+/* 将来ONになったときの見た目 */
+.themeToggleControl input:checked +
+.themeToggleSwitch {
+  border-color: rgba(103, 141, 255, 0.8);
+  background: #5265ed;
+}
+
+.themeToggleControl input:checked +
+.themeToggleSwitch::after {
+  transform: translateX(24px);
+}
+
+/* ダークなどの表示文字 */
+.themeToggleText {
+  min-width: 52px;
+
+  color: #e8efff;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+/* 今は準備中なので少し薄く表示 */
+.themeToggleControl:has(input:disabled) {
+  cursor: default;
+  opacity: 0.58;
+}
+
+/* 3つのカード共通 */
+.settingsSection {
+  position: relative;
+  display: grid;
+
+  grid-template-columns:
+    56px
+    minmax(0, 1fr)
+    minmax(180px, 31%);
+
+  grid-template-rows: auto auto;
+
+  column-gap: 13px;
+  row-gap: 4px;
+  align-items: center;
+
+  min-height: 82px;
+  margin: 0;
+  padding: 13px 14px;
+
+  overflow: visible;
+  border: 1px solid rgba(124, 157, 216, 0.2);
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17, 34, 65, 0.98),
+      rgba(12, 27, 54, 0.98)
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 6px 14px rgba(0, 0, 0, 0.13);
+}
+
+/* 左側の丸いアイコン */
+.settingsSection::before {
+  grid-column: 1;
+  grid-row: 1 / 3;
+
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+
+  font-size: 23px;
+  font-weight: normal;
+  line-height: 1;
+}
+
+/* STOPボタン */
+/* パソコン */
+.pcSettingsSection::before {
+  content: "⌨";
+  background: rgba(34, 125, 80, 0.25);
+  color: #66e59a;
+  font-size: 21px;
+}
+
+/* 背景設定 */
+.backgroundSettingsSection::before {
+  content: "◐";
+  background: rgba(47, 105, 160, 0.28);
+  color: #82c8ff;
+  font-size: 22px;
+}
+
+/* STOPボタン・パソコン・iPhoneのタイトル */
+.settingsSectionTitle {
+  grid-column: 2;
+  grid-row: 1;
+
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  color: #f3f6ff;
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 1.3;
+}

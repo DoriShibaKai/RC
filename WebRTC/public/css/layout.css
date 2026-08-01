@@ -1,0 +1,710 @@
+/* index(18) から機能別に整理 */
+
+* {
+    box-sizing: border-box;
+  }
+
+:root {
+    color-scheme: dark;
+
+    --page-bg: #050c1c;
+    --panel-bg: rgba(12, 24, 48, 0.94);
+    --panel-bg-light: rgba(20, 36, 67, 0.96);
+    --border-color: rgba(148, 173, 220, 0.18);
+
+    --text-main: #f7f9ff;
+    --text-sub: #aab8d4;
+
+    --blue-start: #5265ed;
+    --blue-end: #3347c6;
+
+    --green-start: #3e927b;
+    --green-end: #246758;
+
+    --gray-start: #33415f;
+    --gray-end: #202c46;
+
+    --danger-start: #f04444;
+    --danger-end: #d7222c;
+
+    --accent: #62df83;
+
+    --page-bg-light: #f5f7fb;
+    --panel-bg-light-theme: #ffffff;
+    --text-main-light: #1b2435;
+    --text-sub-light: #5c6d87;
+  }
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 14px;
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(56, 81, 160, 0.25),
+        transparent 38%
+      ),
+      linear-gradient(
+        180deg,
+        #050b18 0%,
+        #071329 55%,
+        #050b18 100%
+      );
+    color: var(--text-main);
+    font-family:
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      "Hiragino Sans",
+      "Yu Gothic",
+      Meiryo,
+      sans-serif;
+  }
+
+body.lightTheme {
+  background: #f5f7fb;
+  color: var(--text-main-light);
+}
+
+.container {
+    width: min(920px, 100%);
+    margin: 0 auto;
+  }
+
+/* ======================================
+     上部ヘッダー
+  ====================================== */
+
+  .appHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    padding: 4px 4px 2px;
+  }
+
+.appTitleArea {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+.cameraLogo {
+    position: relative;
+    display: grid;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border: 1px solid rgba(117, 155, 255, 0.28);
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle,
+        #5dd3ff 0 12%,
+        #162447 13% 28%,
+        #5874ff 29% 37%,
+        #101b35 38% 58%,
+        #223c72 59% 100%
+      );
+    box-shadow:
+      0 0 24px rgba(68, 113, 255, 0.35),
+      inset 0 0 12px rgba(255, 255, 255, 0.18);
+  }
+
+.cameraLogo::after {
+    content: "";
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    filter: blur(1px);
+    transform: translate(-5px, -5px);
+  }
+
+.appTitleText {
+    min-width: 0;
+  }
+
+h1 {
+    margin: 0;
+    font-size: clamp(20px, 3vw, 27px);
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+  }
+
+.appSubtitle {
+    margin: 5px 0 0;
+    color: var(--text-sub);
+    font-size: 13px;
+  }
+
+.headerBadge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    padding: 9px 13px;
+    border: 1px solid rgba(129, 157, 210, 0.22);
+    border-radius: 999px;
+    background: rgba(12, 24, 48, 0.72);
+    color: #dbe6ff;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+.headerBadgeDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  background: #8b95a8;
+  box-shadow: none;
+
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+/* WebRTC接続中 */
+.headerBadgeDot.connected {
+  background: #62df83;
+  box-shadow: 0 0 10px rgba(98,223,131,.8);
+}
+
+/* WebRTC接続処理中 */
+.headerBadgeDot.connecting {
+  background: #f3c84b;
+  box-shadow: 0 0 10px rgba(243, 200, 75, 0.8);
+}
+
+/* ======================================
+   共通パネル
+====================================== */
+
+  /* ======================================
+     共通パネル
+  ====================================== */
+
+  .panel {
+    position: relative;
+    margin-bottom: 14px;
+    padding: 15px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 17px;
+    background:
+      linear-gradient(
+        145deg,
+        rgba(17, 31, 59, 0.97),
+        rgba(8, 19, 40, 0.98)
+      );
+    box-shadow:
+      0 16px 38px rgba(0, 0, 0, 0.27),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+body.lightTheme .panel {
+  background: #ffffff;
+}
+
+.panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        110deg,
+        rgba(255, 255, 255, 0.025),
+        transparent 32%
+      );
+  }
+
+.panel > * {
+    position: relative;
+    z-index: 1;
+  }
+
+/* ======================================
+     部屋名入力
+  ====================================== */
+
+  .roomRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+.roomField {
+    flex: 1;
+    min-width: 0;
+  }
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    color: #dce6fb;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+input {
+    width: 100%;
+    min-height: 46px;
+    margin: 0;
+    padding: 10px 13px;
+    border: 1px solid rgba(151, 177, 225, 0.32);
+    border-radius: 10px;
+    outline: none;
+    background: rgba(3, 10, 25, 0.72);
+    color: #ffffff;
+    font-size: 16px;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+
+input:focus {
+    border-color: #6f8eff;
+    box-shadow: 0 0 0 3px rgba(86, 119, 255, 0.18);
+  }
+
+input:disabled {
+    color: #9ca9c3;
+    background: rgba(6, 13, 28, 0.5);
+  }
+
+/* ======================================
+     機器・通信管理
+  ====================================== */
+
+  .deviceManagement {
+    margin-top: 12px;
+    padding: 13px;
+
+    border: 1px solid rgba(148, 173, 220, 0.32);
+    border-radius: 14px;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(15, 30, 57, 0.88),
+        rgba(8, 20, 42, 0.92)
+      );
+  }
+
+.deviceManagementTitle {
+    margin: 0 0 10px;
+
+    color: #dce6fb;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+.deviceManagementRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 255px;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+.bleStatusDot {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+
+    border-radius: 50%;
+    background: #7f899d;
+  }
+
+.bleStatusDot.connected {
+    background: #62df83;
+    box-shadow: 0 0 9px rgba(98, 223, 131, 0.75);
+  }
+
+.note {
+    margin: 11px 1px 0;
+    color: var(--text-sub);
+    font-size: 15px;
+     font-weight: 600;
+    line-height: 1.55;
+  }
+
+/* ======================================
+     状態表示
+  ====================================== */
+
+.compactStatusRow {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+
+#xyDisplay,
+#driveStatus {
+  display: block;
+
+  box-sizing: border-box;
+  min-height: 24px;
+  margin: 0;
+  padding: 3px 7px;
+
+  border: 1px solid rgba(129, 157, 210, 0.16);
+  border-radius: 8px;
+
+  background: rgba(4, 12, 28, 0.72);
+  color: #dce7ff;
+
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+
+  font-size: 12px;
+  line-height: 16px;
+}
+
+#xyDisplay {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+#driveStatus {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  text-align: left;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.hiddenStatus {
+  display: none;
+}
+
+/* hiddenクラスを付けた要素は完全に非表示 */
+.hidden {
+  display: none !important;
+}
+
+.connectionPanel {
+  padding: 8px 10px 10px;
+}
+
+/* ======================================
+     映像領域
+  ====================================== */
+
+  #videoWrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid rgba(140, 168, 220, 0.2);
+    border-radius: 13px;
+    background:
+      radial-gradient(
+        circle at center,
+        #101b31,
+        #01040b 72%
+      );
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+      0 10px 24px rgba(0, 0, 0, 0.24);
+
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+/* iPhone/Safariの長押しによる文字・画面選択を防ぐ */
+  #videoWrapper,
+  #videoWrapper * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+#videoWrapper video {
+    -webkit-user-drag: none;
+  }
+
+video {
+    display: block;
+    width: 100%;
+    max-height: 78vh;
+    margin: 0;
+    border-radius: 0;
+    background: #000000;
+    object-fit: contain;
+  }
+
+/* ======================================
+   本当の全画面表示
+   PCなどの対応ブラウザ
+====================================== */
+
+#videoWrapper:fullscreen {
+  width: 100vw;
+  height: 100vh;
+
+  border: none;
+  border-radius: 0;
+
+  background: #000000;
+}
+
+#videoWrapper:fullscreen video {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+
+  border-radius: 0;
+  object-fit: contain;
+}
+
+/* ======================================
+     ジョイスティック
+  ====================================== */
+
+  #joystickArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: none;
+    width: 140px;
+    height: 140px;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    border: 2px solid rgba(255, 255, 255, 0.42);
+    border-radius: 50%;
+    background: rgba(8, 18, 38, 0.3);
+    box-shadow:
+      0 0 0 8px rgba(0, 0, 0, 0.08),
+      inset 0 0 25px rgba(255, 255, 255, 0.08);
+  }
+
+#joystickKnob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 50px;
+    height: 50px;
+    margin-left: -25px;
+    margin-top: -25px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 4px 13px rgba(0, 0, 0, 0.35);
+  }
+
+/*
+  右下長押し専用のサイン。
+  ジョイスティックとは別の表示として使用する。
+*/
+#fullscreenHoldIndicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  display: none;
+  width: 76px;
+  height: 76px;
+  transform: translate(-50%, -50%);
+
+  z-index: 35;
+  pointer-events: none;
+
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  border: 3px solid rgba(120, 210, 255, 0.95);
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(5, 18, 38, 0.82) 0 52%,
+      rgba(40, 145, 220, 0.32) 53% 100%
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 0 0 5px rgba(60, 170, 255, 0.15),
+    0 0 24px rgba(60, 170, 255, 0.5);
+}
+
+#fullscreenHoldIndicator .fullscreenHoldLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+}
+
+/*
+  400ミリ秒たつと，3秒成立まで黄色へ変化する。
+*/
+#fullscreenHoldIndicator.fullscreenHoldProgress {
+  display: flex;
+
+  animation:
+    fullscreenHoldProgressColor 2.6s linear forwards;
+}
+
+@keyframes fullscreenHoldProgressColor {
+  0% {
+    border-color: rgba(120, 210, 255, 0.95);
+    box-shadow:
+      0 0 0 5px rgba(60, 170, 255, 0.15),
+      0 0 24px rgba(60, 170, 255, 0.5);
+  }
+
+  100% {
+    border-color: rgba(255, 183, 0, 1);
+    background:
+      radial-gradient(
+        circle,
+        rgba(44, 28, 0, 0.88) 0 52%,
+        rgba(255, 190, 35, 0.5) 53% 100%
+      );
+    box-shadow:
+      0 0 0 8px rgba(255, 190, 0, 0.2),
+      0 0 32px rgba(255, 190, 0, 0.65);
+  }
+}
+
+/*
+  3秒長押しが成立した瞬間の完了表示。
+*/
+#fullscreenHoldIndicator.fullscreenHoldCompleted {
+  display: flex;
+  animation: fullscreenHoldIndicatorPopOut 0.18s ease-out forwards;
+}
+
+@keyframes fullscreenHoldIndicatorPopOut {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  35% {
+    opacity: 1;
+    filter: brightness(1.8);
+  }
+
+  100% {
+    opacity: 0;
+    filter: brightness(1.2);
+  }
+}
+
+/* 詳細設定の中全体 */
+.settingsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 12px;
+  background: rgba(3, 11, 27, 0.72);
+}
+
+/* 説明文共通 */
+.settingsDescription {
+  color: #9eacc8;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+/*
+  パソコン・iPhoneのlabel自体は箱を作らず、
+  中の説明文とプルダウンをカードのグリッドへ直接配置
+*/
+.settingsField {
+  display: contents;
+}
+
+/* STOPキー・STOPジェスチャーは非表示 */
+.settingsLabel {
+  display: none;
+}
+
+/* パソコン・iPhoneの説明文 */
+.settingsField .settingsDescription {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* パソコン・iPhoneのプルダウン */
+.settingsField select {
+  grid-column: 3;
+  grid-row: 1 / 3;
+
+  width: 100%;
+  min-height: 43px;
+  margin: 0;
+  padding: 8px 38px 8px 13px;
+
+  border: 1px solid rgba(133, 165, 220, 0.3);
+  border-radius: 9px;
+  outline: none;
+
+  background: #07142c;
+  color: #ffffff;
+
+  font-size: 18px;
+  font-weight: normal;
+
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.22),
+    0 2px 7px rgba(0, 0, 0, 0.12);
+}
+
+/* ======================================
+   ライトモード時の文字と入力欄
+====================================== */
+
+/* 「接続する部屋名」 */
+body.lightTheme #roomNameLabel {
+  color: #344054 !important;
+  -webkit-text-fill-color: #344054 !important;
+  opacity: 1 !important;
+  font-weight: 700;
+}
+
+/* 「通信するデバイスは同じ部屋名を使用」 */
+body.lightTheme .note {
+  color: #64748b;
+}
+
+/* 部屋名を変更できるとき */
+body.lightTheme #roomName:not(:disabled) {
+  border-color: #7f8ba0;
+  background: #ffffff;
+  color: #263247;
+  -webkit-text-fill-color: #263247;
+  opacity: 1;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* 接続中など，部屋名を変更できないとき */
+body.lightTheme #roomName:disabled {
+  border-color: #b4bcc9;
+  background: #dfe3e9;
+  color: #7a8494;
+  -webkit-text-fill-color: #7a8494;
+  opacity: 1;
+  box-shadow: none;
+}
