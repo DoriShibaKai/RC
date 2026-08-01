@@ -951,40 +951,48 @@ function refreshMobileFullscreenAfterRotation() {
 
 
 function applyStopButtonVisibility() {
+  const settingWantsVisible =
+    stopButtonVisibleToggle.checked;
 
-  /*
-    通常時は詳細設定の選択に従う。
-
-    非常停止中は，設定が「非表示」でも
-    解除手段を残すため強制的に表示する。
-  */
   const shouldShow =
-    stopButtonVisibleToggle.checked ||
-    driveStopped;
+    driveStopped ||
+    settingWantsVisible;
 
-  driveStopButton.classList.toggle(
-    "stopButtonHidden",
-    !shouldShow
-  );
+  if (shouldShow) {
+    driveStopButton.classList.remove(
+      "stopButtonHidden"
+    );
+  } else {
+    driveStopButton.classList.add(
+      "stopButtonHidden"
+    );
+  }
 
-  /*
-    設定自体は「非表示」のままでも，
-    非常停止中だけ一時的に表示していることを示す。
-  */
   if (
-    !stopButtonVisibleToggle.checked &&
-    driveStopped
+    driveStopped &&
+    !settingWantsVisible
   ) {
     stopVisibilityState.textContent =
       "非常停止中は表示";
-
-    return;
+  } else {
+    stopVisibilityState.textContent =
+      settingWantsVisible
+        ? "表示"
+        : "非表示";
   }
 
-  stopVisibilityState.textContent =
-    stopButtonVisibleToggle.checked
-      ? "表示"
-      : "非表示";
+  console.log(
+    "表示判定",
+    {
+      driveStopped,
+      settingWantsVisible,
+      shouldShow,
+      hiddenClass:
+        driveStopButton.classList.contains(
+          "stopButtonHidden"
+        )
+    }
+  );
 }
 
 
