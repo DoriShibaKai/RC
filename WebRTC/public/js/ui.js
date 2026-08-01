@@ -952,16 +952,39 @@ function refreshMobileFullscreenAfterRotation() {
 
 function applyStopButtonVisibility() {
 
+  /*
+    通常時は詳細設定の選択に従う。
+
+    非常停止中は，設定が「非表示」でも
+    解除手段を残すため強制的に表示する。
+  */
   const shouldShow =
-    stopButtonVisibleToggle.checked;
+    stopButtonVisibleToggle.checked ||
+    driveStopped;
 
   driveStopButton.classList.toggle(
     "stopButtonHidden",
     !shouldShow
   );
 
+  /*
+    設定自体は「非表示」のままでも，
+    非常停止中だけ一時的に表示していることを示す。
+  */
+  if (
+    !stopButtonVisibleToggle.checked &&
+    driveStopped
+  ) {
+    stopVisibilityState.textContent =
+      "非常停止中は表示";
+
+    return;
+  }
+
   stopVisibilityState.textContent =
-    shouldShow ? "表示" : "非表示";
+    stopButtonVisibleToggle.checked
+      ? "表示"
+      : "非表示";
 }
 
 
