@@ -362,19 +362,11 @@ function applyDriveStopState(stopped) {
 
   driveStopped = stopped;
 
-  /*
-    非常停止中は、
-    白地・赤文字の「解除」表示にする。
-  */
   driveStopButton.classList.toggle(
     "driveStoppedAppearance",
     stopped
   );
 
-  /*
-    操縦中または操作開始候補の状態を
-    すべて解除する。
-  */
   joystickActive = false;
   joystickCandidate = false;
   joystickPointerId = null;
@@ -391,7 +383,7 @@ function applyDriveStopState(stopped) {
   xyDisplay.textContent =
     "X：0.00　Y：0.00";
 
-    if (stopped) {
+  if (stopped) {
     driveStopButtonText.textContent =
       "解除";
 
@@ -400,7 +392,6 @@ function applyDriveStopState(stopped) {
         "非常停止中です。" +
         "再開するには「解除」を押してください。";
     }
-
   } else {
     driveStopButtonText.textContent =
       "STOP";
@@ -413,12 +404,21 @@ function applyDriveStopState(stopped) {
   }
 
   /*
-    非常停止中は，
-    設定でSTOPボタンを非表示にしていても
-    「解除」ボタンを強制的に表示する。
-
-    非常停止解除後は，
-    元の表示設定へ戻す。
+    STOP／解除の切り替え後に、
+    必ず表示・非表示を再判定する。
   */
   applyStopButtonVisibility();
+
+  console.log(
+    "STOP表示更新",
+    {
+      driveStopped,
+      settingChecked:
+        stopButtonVisibleToggle.checked,
+      hiddenClass:
+        driveStopButton.classList.contains(
+          "stopButtonHidden"
+        )
+    }
+  );
 }
