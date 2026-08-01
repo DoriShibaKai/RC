@@ -391,7 +391,7 @@ function applyDriveStopState(stopped) {
   xyDisplay.textContent =
     "X：0.00　Y：0.00";
 
-  if (stopped) {
+    if (stopped) {
     driveStopButtonText.textContent =
       "解除";
 
@@ -401,15 +401,24 @@ function applyDriveStopState(stopped) {
         "再開するには「解除」を押してください。";
     }
 
-    return;
+  } else {
+    driveStopButtonText.textContent =
+      "STOP";
+
+    if (!settingsPanel.open) {
+      driveStatusElement.textContent =
+        "非常停止を解除しました。" +
+        "映像上をクリックして操作を再開してください。";
+    }
   }
 
-  driveStopButtonText.textContent =
-    "STOP";
+  /*
+    非常停止中は，
+    設定でSTOPボタンを非表示にしていても
+    「解除」ボタンを強制的に表示する。
 
-  if (!settingsPanel.open) {
-    driveStatusElement.textContent =
-      "非常停止を解除しました。" +
-      "映像上をクリックして操作を再開してください。";
-  }
+    非常停止解除後は，
+    元の表示設定へ戻す。
+  */
+  applyStopButtonVisibility();
 }
