@@ -3772,94 +3772,301 @@ if (driveChannel) {
     }
 
     function sendSignal(data) {
-      if (!socket || socket.readyState !== WebSocket.OPEN) {
-        return;
-      }
+  if (
+    !socket ||
+    socket.readyState !== WebSocket.OPEN
+  ) {
+    return;
+  }
 
-      socket.send(JSON.stringify(data));
+  socket.send(
+    JSON.stringify(data)
+  );
+}
+
+/*
+  相手が同じ部屋へ入り直したとき，
+  古いWebRTC接続だけを片付けて作り直す。
+
+  WebSocket，カメラ，BLEは維持する。
+*/
+function rebuildPeerConnectionForReconnect() {
+
+  /*
+    古い操縦用DataChannelを停止する。
+  */
+  stopDriveCommandRepeater();
+  stopDriveCommunicationWatchdog();
+
+  currentDriveX = 0;
+  currentDriveY = 0;
+
+  if (driveChannel) {
+    driveChannel.onopen = null;
+    driveChannel.onclosing = null;
+    driveChannel.onclose = null;
+    driveChannel.onerror = null;
+    driveChannel.onmessage = null;
+
+    if (
+      driveChannel.readyState !== "closed"
+    ) {
+      try {
+        driveChannel.close();
+      } catch {
+        // すでに閉じている場合は無視
+      }
     }
 
-    function connectWebSocket(roomName) {
-      return new Promise((resolve, reject) => {
-        const protocol =
-          location.protocol === "https:" ? "wss:" : "ws:";
+    driveChannel = null;
+  }
 
-        const socketUrl =
-          protocol +
-          "//" +
-          location.host +
-          "/ws/" +
-          encodeURIComponent(roomName);
+  /*
+    古いRTCPeerConnectionを閉じる。
+  */
+  if (peerConnection) {
+    peerConnection.onicecandidate = null;
+    peerConnection.ondatachannel = null;
+    peerConnection.ontrack = null;
+    peerConnection.onconnectionstatechange = null;
 
-        socket = new WebSocket(socketUrl);
+    try {
+      peerConnection.close();
+    } catch {
+      // すでに閉じている場合は無視
+    }
 
-        socket.onopen = () => {
+    peerConnection = null;
+  }
+
+  offerStarted = false;
+
+  /*
+    受信側では，古い相手映像を消して
+    新しい映像を待つ。
+  */
+  if (role === "viewer") {
+    videoElement.pause();
+    videoElement.srcObject = null;
+    videoElement.classList.add("hidden");
+    videoElement.muted = true;
+  }
+
+  /*
+    現在の役割に合わせて，
+    RTCPeerConnectionを新しく作る。
+  */
+  createPeerConnection();
+
+  if (role === "sender") {
+
+    /*
+      送信側は，すでに取得済みの
+      カメラ・マイクを新しい接続へ追加する。
+    */
+    if (localStream) {
+      for (
+        const track
+        of localStream.getTracks()
+      ) {
+        peerConnection.addTrack(
+          track,
+          localStream
+        );
+      }
+    }
+  } else if (role === "viewer") {
+
+    /*
+      受信側は映像と音声を受信専用で準備する。
+    */
+    peerConnection.addTransceiver(
+      "video",
+      {
+        direction: "recvonly"
+      }
+    );
+
+    peerConnection.addTransceiver(
+      "audio",
+      {
+        direction: "recvonly"
+      }
+    );
+  }
+
+  headerBadgeDot.classList.remove(
+    "connected"
+  );
+
+  headerBadgeDot.classList.add(
+    "connecting"
+  );
+}
+
+function connectWebSocket(roomName) {
+  return new Promise(
+    (resolve, reject) => {
+
+      const protocol =
+        location.protocol === "https:"
+          ? "wss:"
+          : "ws:";
+
+      /*
+        sender／viewerをURLへ付ける。
+
+        Cloudflare側はこの値を使って，
+        同じ役割の古い接続を
+        新しい接続へ置き換える。
+      */
+      const socketUrl =
+        protocol +
+        "//" +
+        location.host +
+        "/ws/" +
+        encodeURIComponent(roomName) +
+        "?role=" +
+        encodeURIComponent(role);
+
+      /*
+        この接続専用の変数を作る。
+
+        古いWebSocketのoncloseが，
+        後から新しい接続を停止することを防ぐ。
+      */
+      const connectionSocket =
+        new WebSocket(socketUrl);
+
+      socket = connectionSocket;
+
+      let connectionOpened = false;
+
+      connectionSocket.onopen = () => {
+        connectionOpened = true;
+
+        sendSignal({
+          type: "role",
+          role
+        });
+
+        if (role === "sender") {
           sendSignal({
-            type: "role",
-            role
+            type: "sender-ready"
           });
 
-          if (role === "sender") {
-            sendSignal({
-              type: "sender-ready"
-            });
+          setStatus(
+            "カメラを準備しました。\n" +
+            "パソコン側の接続を待っています。"
+          );
+        } else {
+          sendSignal({
+            type: "viewer-ready"
+          });
 
-            setStatus(
-              "カメラを準備しました。\n" +
-              "パソコン側の接続を待っています。"
-            );
-          } else {
-            sendSignal({
-              type: "viewer-ready"
-            });
+          setStatus(
+            "受信準備ができました。\n" +
+            "iPhone側の接続を待っています。"
+          );
+        }
 
-            setStatus(
-              "受信準備ができました。\n" +
-              "iPhone側の接続を待っています。"
-            );
-          }
+        resolve();
+      };
 
-          resolve();
-        };
-
-        socket.onmessage = async event => {
+      connectionSocket.onmessage =
+        async event => {
           try {
-            const message = JSON.parse(event.data);
+            const message =
+              JSON.parse(event.data);
+
             await handleSignal(message);
           } catch (error) {
             console.error(error);
-            setStatus("接続情報の処理中にエラーが発生しました。");
+
+            setStatus(
+              "接続情報の処理中に" +
+              "エラーが発生しました。"
+            );
           }
         };
 
-        socket.onerror = () => {
+      connectionSocket.onerror = () => {
+        /*
+          接続開始前のエラーだけ，
+          startSender／startViewerのcatchへ渡す。
+        */
+        if (!connectionOpened) {
           reject(
-            new Error("Cloudflareへの接続に失敗しました。")
+            new Error(
+              "Cloudflareへの接続に失敗しました。"
+            )
           );
-        };
+        }
+      };
 
-        socket.onclose = () => {
-          if (role !== null) {
-            setStatus("Cloudflareとの接続が終了しました。");
-          }
-        };
-      });
+      connectionSocket.onclose = () => {
+
+        /*
+          すでに別の新しいWebSocketへ
+          入れ替わっている場合は何もしない。
+        */
+        if (socket !== connectionSocket) {
+          return;
+        }
+
+        socket = null;
+
+        /*
+          通信途絶時は古いWebRTC・映像・操作状態を
+          完全に片付ける。
+
+          これにより，ネット回復後に同じ部屋名で
+          送信／受信ボタンを再び押せる。
+        */
+        if (role !== null) {
+          stopAll(false);
+
+          setStatus(
+            "通信が切断されました。\n" +
+            "ネット接続を確認して，" +
+            "同じ部屋名で接続し直してください。"
+          );
+        }
+      };
     }
+  );
+}
 
     async function handleSignal(message) {
       if (message.type === "joined") {
         return;
       }
 
-      if (message.type === "peer-joined") {
-        if (role === "sender") {
-          sendSignal({ type: "sender-ready" });
-        } else if (role === "viewer") {
-          sendSignal({ type: "viewer-ready" });
-        }
+    if (message.type === "peer-joined") {
 
-        return;
-      }
+  /*
+    相手が同じ部屋へ入り直した場合，
+    古いWebRTC接続を捨てて新しく準備する。
+  */
+  rebuildPeerConnectionForReconnect();
+
+  if (role === "sender") {
+    sendSignal({
+      type: "sender-ready"
+    });
+  } else if (role === "viewer") {
+    sendSignal({
+      type: "viewer-ready"
+    });
+  }
+
+  setStatus(
+    "相手側が再接続しました。\n" +
+    "WebRTC接続を作り直しています。"
+  );
+
+  return;
+}
 
       if (
         message.type === "sender-ready" &&
