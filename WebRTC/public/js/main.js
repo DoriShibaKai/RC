@@ -16,8 +16,26 @@ videoElement.addEventListener(
 );
 
 
+/*
+  小窓の映像サイズが確定したら，
+  保存位置を現在の映像枠へ再適用する。
+*/
+pipVideoElement.addEventListener(
+  "loadedmetadata",
+  () => {
+    applyPipVideoPosition();
+  }
+);
 
-    /*
+pipVideoElement.addEventListener(
+  "playing",
+  () => {
+    applyPipVideoPosition();
+  }
+);
+
+
+/*
   BLE接続表示を更新する
 */
 
@@ -105,13 +123,15 @@ videoWrapper.addEventListener(
       STOPボタンや全画面ボタン自体を押した場合は，
       長押し判定とジョイスティックを開始しない。
     */
-    if (
-      event.target.closest(
-        "#driveStopButton, #pcFullscreenButton"
-      )
-    ) {
-      return;
-    }
+   if (
+  event.target.closest(
+    "#driveStopButton, " +
+    "#pcFullscreenButton, " +
+    "#pipVideoContainer"
+  )
+) {
+  return;
+}
 
     /*
       送信側・受信側のどちらでも，
@@ -466,7 +486,9 @@ videoWrapper.addEventListener(
   event => {
     if (
       !event.target.closest(
-        "#driveStopButton, #pcFullscreenButton"
+        "#driveStopButton, " +
+        "#pcFullscreenButton, " +
+        "#pipVideoContainer"
       )
     ) {
       event.preventDefault();
@@ -480,7 +502,9 @@ videoWrapper.addEventListener(
   event => {
     if (
       !event.target.closest(
-        "#driveStopButton, #pcFullscreenButton"
+        "#driveStopButton, " +
+        "#pcFullscreenButton, " +
+        "#pipVideoContainer"
       )
     ) {
       event.preventDefault();
@@ -539,6 +563,352 @@ driveStopButton.addEventListener(
   toggleDriveStop
 );
 
+
+// ======================================
+// 小窓（PiP）のドラッグ移動
+// ======================================
+
+const PIP_POSITION_STORAGE_KEY =
+  "pipVideoPositionV1";
+
+
+/*
+  数値を0～1へ収める。
+*/
+function clampPipPositionRatio(value) {
+
+  return Math.min(
+    1,
+    Math.max(0, value)
+  );
+}
+
+
+/*
+  保存されている比率から，
+  現在の映像枠内での小窓位置を計算する。
+*/
+function applyPipVideoPosition() {
+
+  if (
+    pipVideoContainer.classList.contains(
+      "hidden"
+    )
+  ) {
+    return;
+  }
+
+  const wrapperRect =
+    videoWrapper.getBoundingClientRect();
+
+  const pipRect =
+    pipVideoContainer.getBoundingClientRect();
+
+  if (
+    wrapperRect.width <= 0 ||
+    wrapperRect.height <= 0 ||
+    pipRect.width <= 0 ||
+    pipRect.height <= 0
+  ) {
+    return;
+  }
+
+  const maximumLeft =
+    Math.max(
+      0,
+      wrapperRect.width -
+        pipRect.width
+    );
+
+  const maximumTop =
+    Math.max(
+      0,
+      wrapperRect.height -
+        pipRect.height
+    );
+
+  const leftPx =
+    maximumLeft *
+    clampPipPositionRatio(
+      pipVideoPosition.xRatio
+    );
+
+  const topPx =
+    maximumTop *
+    clampPipPositionRatio(
+      pipVideoPosition.yRatio
+    );
+
+  /*
+    CSSのright指定ではなく，
+    ドラッグ後はleft・topで位置を管理する。
+  */
+  pipVideoContainer.style.right =
+    "auto";
+
+  pipVideoContainer.style.bottom =
+    "auto";
+
+  pipVideoContainer.style.left =
+    `${leftPx}px`;
+
+  pipVideoContainer.style.top =
+    `${topPx}px`;
+}
+
+
+/*
+  小窓の位置をブラウザへ保存する。
+*/
+function savePipVideoPosition() {
+
+  localStorage.setItem(
+    PIP_POSITION_STORAGE_KEY,
+    JSON.stringify(
+      pipVideoPosition
+    )
+  );
+}
+
+
+/*
+  保存済みの小窓位置を読み込む。
+*/
+function loadPipVideoPosition() {
+
+  const saved =
+    localStorage.getItem(
+      PIP_POSITION_STORAGE_KEY
+    );
+
+  if (saved) {
+
+    try {
+
+      const parsed =
+        JSON.parse(saved);
+
+      if (
+        Number.isFinite(
+          parsed.xRatio
+        ) &&
+        Number.isFinite(
+          parsed.yRatio
+        )
+      ) {
+
+        pipVideoPosition = {
+          xRatio:
+            clampPipPositionRatio(
+              parsed.xRatio
+            ),
+
+          yRatio:
+            clampPipPositionRatio(
+              parsed.yRatio
+            )
+        };
+      }
+
+    } catch (error) {
+
+      console.error(
+        "小窓位置の読み込みに失敗しました。",
+        error
+      );
+    }
+  }
+
+  requestAnimationFrame(
+    applyPipVideoPosition
+  );
+}
+
+
+/*
+  小窓を押した時点から，
+  小窓専用のドラッグ操作を開始する。
+*/
+pipVideoContainer.addEventListener(
+  "pointerdown",
+  event => {
+
+    if (
+      pipVideoContainer.classList.contains(
+        "hidden"
+      )
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    pipDragActive = true;
+
+    pipDragPointerId =
+      event.pointerId;
+
+    pipDragStartX =
+      event.clientX;
+
+    pipDragStartY =
+      event.clientY;
+
+    const wrapperRect =
+      videoWrapper.getBoundingClientRect();
+
+    const pipRect =
+      pipVideoContainer
+        .getBoundingClientRect();
+
+    pipDragStartLeft =
+      pipRect.left -
+      wrapperRect.left;
+
+    pipDragStartTop =
+      pipRect.top -
+      wrapperRect.top;
+
+    try {
+
+      pipVideoContainer
+        .setPointerCapture(
+          event.pointerId
+        );
+
+    } catch (error) {
+
+      console.log(
+        "小窓のPointer Captureを" +
+        "設定できませんでした。",
+        error
+      );
+    }
+  }
+);
+
+
+/*
+  指またはマウスの移動に合わせて
+  小窓を移動する。
+*/
+window.addEventListener(
+  "pointermove",
+  event => {
+
+    if (
+      !pipDragActive ||
+      pipDragPointerId !==
+        event.pointerId
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const wrapperRect =
+      videoWrapper.getBoundingClientRect();
+
+    const pipRect =
+      pipVideoContainer
+        .getBoundingClientRect();
+
+    if (
+      wrapperRect.width <= 0 ||
+      wrapperRect.height <= 0
+    ) {
+      return;
+    }
+
+    const maximumLeft =
+      Math.max(
+        0,
+        wrapperRect.width -
+          pipRect.width
+      );
+
+    const maximumTop =
+      Math.max(
+        0,
+        wrapperRect.height -
+          pipRect.height
+      );
+
+    const newLeftPx =
+      Math.min(
+        maximumLeft,
+        Math.max(
+          0,
+          pipDragStartLeft +
+          event.clientX -
+          pipDragStartX
+        )
+      );
+
+    const newTopPx =
+      Math.min(
+        maximumTop,
+        Math.max(
+          0,
+          pipDragStartTop +
+          event.clientY -
+          pipDragStartY
+        )
+      );
+
+    pipVideoPosition.xRatio =
+      maximumLeft > 0
+        ? newLeftPx /
+          maximumLeft
+        : 0;
+
+    pipVideoPosition.yRatio =
+      maximumTop > 0
+        ? newTopPx /
+          maximumTop
+        : 0;
+
+    applyPipVideoPosition();
+  },
+  {
+    passive: false
+  }
+);
+
+
+/*
+  小窓のドラッグを終了し，
+  最後の位置を保存する。
+*/
+function finishPipDrag(event) {
+
+  if (
+    !pipDragActive ||
+    pipDragPointerId !==
+      event.pointerId
+  ) {
+    return;
+  }
+
+  pipDragActive = false;
+  pipDragPointerId = null;
+
+  savePipVideoPosition();
+}
+
+
+window.addEventListener(
+  "pointerup",
+  finishPipDrag
+);
+
+window.addEventListener(
+  "pointercancel",
+  finishPipDrag
+);
+
+
 // ======================================
 // STOPボタンの位置・サイズ編集
 // 現在はPC通常画面・PC全画面を対象
@@ -582,11 +952,12 @@ let videoWasPlayingBeforeStopEdit = false;
 if (window.ResizeObserver) {
 
   const stopButtonResizeObserver =
-    new ResizeObserver(
-      () => {
-        scheduleStopButtonGeometryApply();
-      }
-    );
+  new ResizeObserver(
+    () => {
+      scheduleStopButtonGeometryApply();
+      applyPipVideoPosition();
+    }
+  );
 
   stopButtonResizeObserver.observe(
     videoWrapper
@@ -1347,6 +1718,7 @@ themeModeToggle.addEventListener(
 
 loadSettings();
 loadStopButtonGeometry();
+loadPipVideoPosition();
 
 driveSpeedSelect.addEventListener(
   "change",
