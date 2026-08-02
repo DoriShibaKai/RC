@@ -1,9 +1,180 @@
 "use strict";
 
 function setStatus(message) {
-      statusElement.textContent = message;
-      console.log(message);
+  statusElement.textContent = message;
+  console.log(message);
+}
+
+
+/*
+  詳細設定内にマイク送信の
+  ON／OFF設定を追加する。
+
+  HTMLを書き換えなくても，
+  ui.jsから設定カードを生成する。
+*/
+function ensureMicrophoneSettingsControl() {
+  if (
+    document.getElementById(
+      "microphoneEnabledToggle"
+    )
+  ) {
+    return;
+  }
+
+  const settingsContent =
+    document.querySelector(
+      "#settingsPanel .settingsContent"
+    );
+
+  if (!settingsContent) {
+    console.warn(
+      "詳細設定欄が見つからないため，" +
+      "マイク設定を追加できませんでした。"
+    );
+
+    return;
+  }
+
+  const microphoneGroup =
+    document.createElement("section");
+
+  microphoneGroup.className =
+    "settingsGroup microphoneSettingsGroup";
+
+  microphoneGroup.innerHTML = `
+    <h3 class="settingsGroupTitle">
+      音声
+    </h3>
+
+    <div class="settingsGroupCards">
+      <div
+        class="
+          settingsSection
+          microphoneSettingsSection
+        "
+      >
+        <div>
+          <div
+            style="
+              color: #eef3ff;
+              font-size: 16px;
+              font-weight: bold;
+            "
+          >
+            マイク送信
+          </div>
+
+          <div
+            style="
+              margin-top: 4px;
+              color: #8998b6;
+              font-size: 13px;
+              line-height: 1.45;
+            "
+          >
+            自分の声を相手側へ送信します。
+          </div>
+        </div>
+
+        <label
+          class="stopVisibilityControl"
+          for="microphoneEnabledToggle"
+        >
+          <input
+            id="microphoneEnabledToggle"
+            type="checkbox"
+          >
+
+          <span
+            class="stopVisibilitySwitch"
+            aria-hidden="true"
+          ></span>
+
+          <span
+            id="microphoneEnabledState"
+            class="stopVisibilityState"
+          >
+            OFF
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <p class="settingsGroupNote">
+      この設定は端末ごとに保存されます。
+    </p>
+  `;
+
+  settingsContent.appendChild(
+    microphoneGroup
+  );
+
+  const toggle =
+    document.getElementById(
+      "microphoneEnabledToggle"
+    );
+
+  toggle.addEventListener(
+    "change",
+    async () => {
+      const requestedEnabled =
+        toggle.checked;
+
+      try {
+        await setMicrophoneEnabled(
+          requestedEnabled
+        );
+
+        saveSettings();
+      } catch (error) {
+        console.error(
+          "マイク設定を変更できませんでした。",
+          error
+        );
+
+        toggle.checked = false;
+
+        microphoneEnabled = false;
+
+        updateMicrophoneSettingsDisplay();
+
+        setStatus(
+          "マイクを開始できませんでした。\n" +
+          error.message
+        );
+      }
     }
+  );
+}
+
+
+/*
+  マイク設定の表示を現在の状態へ合わせる。
+*/
+function updateMicrophoneSettingsDisplay() {
+  const toggle =
+    document.getElementById(
+      "microphoneEnabledToggle"
+    );
+
+  const state =
+    document.getElementById(
+      "microphoneEnabledState"
+    );
+
+  if (!toggle || !state) {
+    return;
+  }
+
+  toggle.checked =
+    microphoneEnabled;
+
+  state.textContent =
+    microphoneEnabled
+      ? "ON"
+      : "OFF";
+}
 
 
 function setControlsConnected() {
@@ -1018,6 +1189,27 @@ function loadSettings() {
     savedStopButtonVisible !== "false";
 
   applyStopButtonVisibility();
+
+  /*
+    詳細設定内にマイク設定欄を作る。
+  */
+  ensureMicrophoneSettingsControl();
+
+  /*
+    初回はOFF。
+
+    過去にこの端末でONにして保存していれば，
+    その設定を復元する。
+  */
+  const savedMicrophoneEnabled =
+    localStorage.getItem(
+      "microphoneEnabled"
+    );
+
+  microphoneEnabled =
+    savedMicrophoneEnabled === "true";
+
+  updateMicrophoneSettingsDisplay();
 }
 
 
@@ -1030,6 +1222,16 @@ function saveSettings() {
 
   localStorage.setItem(
     "stopButtonVisible",
-    String(stopButtonVisibleToggle.checked)
+    String(
+      stopButtonVisibleToggle.checked
+    )
+  );
+
+  /*
+    この端末のマイク送信設定を保存する。
+  */
+  localStorage.setItem(
+    "microphoneEnabled",
+    String(microphoneEnabled)
   );
 }
