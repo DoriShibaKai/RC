@@ -435,18 +435,102 @@ input:disabled {
   }
 
 #videoWrapper video {
-    -webkit-user-drag: none;
-  }
+  -webkit-user-drag: none;
+}
 
-video {
-    display: block;
-    width: 100%;
-    max-height: 78vh;
-    margin: 0;
-    border-radius: 0;
-    background: #000000;
-    object-fit: contain;
-  }
+/*
+  基本映像。
+*/
+#videoWrapper .mainVideo {
+  display: block;
+  width: 100%;
+  max-height: 78vh;
+  margin: 0;
+  border-radius: 0;
+  background: #000000;
+  object-fit: contain;
+}
+
+/*
+  小窓全体。
+
+  初期位置は右上。
+  後でJavaScriptから位置を設定する。
+*/
+.pipVideoContainer {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+
+  z-index: 25;
+
+  width: min(28%, 260px);
+  min-width: 130px;
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 10px;
+
+  background: #000000;
+
+  box-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.55);
+
+  /*
+    小窓をドラッグするため，
+    小窓自身がポインター操作を受け取る。
+  */
+  pointer-events: auto;
+  touch-action: none;
+
+  cursor: grab;
+}
+
+.pipVideoContainer:active {
+  cursor: grabbing;
+}
+
+.pipVideoContainer video {
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  margin: 0;
+  border-radius: 0;
+
+  background: #000000;
+  object-fit: cover;
+
+  pointer-events: none;
+}
+
+/*
+  自分・相手の両方が映像OFFのときに，
+  黒い基本映像の左下へ表示する。
+*/
+.videoOffIndicator {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+
+  z-index: 20;
+
+  padding: 4px 8px;
+
+  border-radius: 5px;
+
+  background: rgba(0, 0, 0, 0.52);
+
+  color: rgba(235, 240, 250, 0.74);
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+
+  pointer-events: none;
+}
 
 /* ======================================
    本当の全画面表示
@@ -470,6 +554,28 @@ video {
 
   border-radius: 0;
   object-fit: contain;
+}
+
+/*
+  全画面表示中も小窓だけは小窓サイズを保つ。
+
+  上の
+  #videoWrapper:fullscreen video
+  より具体的な指定で上書きする。
+*/
+#videoWrapper:fullscreen
+  .pipVideoContainer {
+  width: min(26vw, 320px);
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+#videoWrapper:fullscreen
+  .pipVideoContainer video {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
 }
 
 /* ======================================
