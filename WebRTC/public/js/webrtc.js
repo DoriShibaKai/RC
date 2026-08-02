@@ -832,16 +832,27 @@ connection.ontrack =
       }
 
       if (state === "disconnected") {
-        activateCommunicationLossStop(
-          "WebRTC通信が一時的に切断されました。"
-        );
 
-        setStatus(
-          "通信が一時的に切断され，安全のため自動STOPしました。"
-        );
+  /*
+    通信が切れた時点で，
+    黒い映像枠を含めて映像表示を隠す。
+  */
+  videoConnectionActive = false;
+  remoteCameraEnabled = false;
+  remoteVideoStream = null;
 
-        return;
-      }
+  updateVideoLayout();
+
+  activateCommunicationLossStop(
+    "WebRTC通信が一時的に切断されました。"
+  );
+
+  setStatus(
+    "通信が一時的に切断され，安全のため自動STOPしました。"
+  );
+
+  return;
+}
 
       if (state === "failed") {
         handlePeerCommunicationLoss(
