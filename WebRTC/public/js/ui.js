@@ -335,40 +335,61 @@ function ensureVideoSettingsControl() {
     );
 
   cameraToggle.addEventListener(
-    "change",
-    async () => {
+  "change",
+  async () => {
 
-      const requestedEnabled =
-        cameraToggle.checked;
+    const previousEnabled =
+      localCameraEnabled;
 
-      try {
+    const requestedEnabled =
+      cameraToggle.checked;
 
-        await setCameraEnabled(
-          requestedEnabled
-        );
+    try {
 
-        updateVideoSettingsDisplay();
-        saveSettings();
+      await setCameraEnabled(
+        requestedEnabled
+      );
 
-      } catch (error) {
+      updateVideoSettingsDisplay();
 
-        console.error(
-          "カメラ設定を変更できませんでした。",
-          error
-        );
+      /*
+        カメラ操作を利用者が明示的に行ったので，
+        この時点で保存値を作る。
+      */
+      localStorage.setItem(
+        "localCameraEnabled",
+        String(localCameraEnabled)
+      );
 
-        cameraToggle.checked =
-          localCameraEnabled;
+      saveSettings();
 
-        updateVideoSettingsDisplay();
+    } catch (error) {
 
-        setStatus(
-          "カメラを開始できませんでした。\n" +
-          error.message
-        );
-      }
+      console.error(
+        "カメラ設定を変更できませんでした。",
+        error
+      );
+
+      /*
+        カメラ許可拒否などで失敗した場合は，
+        変更前の状態へ戻す。
+      */
+      localCameraEnabled =
+        previousEnabled;
+
+      cameraToggle.checked =
+        previousEnabled;
+
+      updateVideoSettingsDisplay();
+      updateVideoLayout();
+
+      setStatus(
+        "カメラを開始できませんでした。\n" +
+        error.message
+      );
     }
-  );
+  }
+);
 
   videoSwapToggle.addEventListener(
     "change",
@@ -600,6 +621,14 @@ function showPipVideoStream(stream) {
 
   pipVideoContainer.classList.remove(
     "hidden"
+  );
+
+  /*
+    一度非表示になった小窓を再表示した場合も，
+    保存済みの位置を確実に適用する。
+  */
+  requestAnimationFrame(
+    applyPipVideoPosition
   );
 }
 
@@ -1834,12 +1863,27 @@ function saveSettings() {
     )
   );
 
+ /*
+  カメラ保存値がすでにある場合，または
+  sender／viewerの役割が決定済みの場合だけ保存する。
+
+  初回接続前に別の設定を変更しただけで，
+  localCameraEnabled=falseが保存されるのを防ぐ。
+*/
+if (
+  localStorage.getItem(
+    "localCameraEnabled"
+  ) !== null ||
+  role !== null
+) {
+
   localStorage.setItem(
     "localCameraEnabled",
     String(
       localCameraEnabled
     )
   );
+}
 
   localStorage.setItem(
     "preferLocalVideoAsMain",
