@@ -480,14 +480,105 @@ function createPeerConnection() {
       );
     };
 
-  connection.ontrack =
+connection.ontrack =
   event => {
     const [remoteStream] =
       event.streams;
 
     /*
-      音声トラックは，
-      sender／viewerの両方で再生する。
+      受信側では，映像と音声を
+      同じvideo要素で再生する。
+
+      iPhoneでは，非表示のaudio要素よりも
+      映像と一体で再生した方が安定する。
+    */
+    if (role === "viewer") {
+      let viewerStream =
+        remoteStream;
+
+      /*
+        event.streamsにストリームがない場合は，
+        video要素用のストリームを作る。
+      */
+      if (!viewerStream) {
+        if (
+          videoElement.srcObject
+          instanceof MediaStream
+        ) {
+          viewerStream =
+            videoElement.srcObject;
+        } else {
+          viewerStream =
+            new MediaStream();
+        }
+
+        const trackAlreadyAdded =
+          viewerStream
+            .getTracks()
+            .some(
+              track =>
+                track.id ===
+                event.track.id
+            );
+
+        if (!trackAlreadyAdded) {
+          viewerStream.addTrack(
+            event.track
+          );
+        }
+      }
+
+      if (
+        videoElement.srcObject !==
+        viewerStream
+      ) {
+        videoElement.srcObject =
+          viewerStream;
+      }
+
+      /*
+        HTMLにmuted属性が付いている場合も
+        確実に解除する。
+      */
+      videoElement.muted = false;
+      videoElement.defaultMuted = false;
+      videoElement.removeAttribute(
+        "muted"
+      );
+
+      videoElement.volume = 1;
+
+      videoElement.classList.remove(
+        "hidden"
+      );
+
+      scheduleStopButtonGeometryApply();
+
+      videoElement.play()
+        .then(() => {
+          scheduleStopButtonGeometryApply();
+        })
+        .catch(error => {
+          console.warn(
+            "映像・音声を自動再生できませんでした。",
+            error
+          );
+
+          scheduleStopButtonGeometryApply();
+
+          setStatus(
+            "映像と音声を受信しました。\n" +
+            "音声が出ない場合は，映像部分を一度押してください。"
+          );
+        });
+
+      return;
+    }
+
+    /*
+      送信側では自分の映像をvideo要素に
+      表示しているため，相手から届く音声は
+      専用audio要素で再生する。
     */
     if (event.track.kind === "audio") {
       const remoteAudioElement =
@@ -509,6 +600,14 @@ function createPeerConnection() {
       }
 
       remoteAudioElement.muted = false;
+      remoteAudioElement.defaultMuted =
+        false;
+
+      remoteAudioElement.removeAttribute(
+        "muted"
+      );
+
+      remoteAudioElement.volume = 1;
 
       remoteAudioElement.play()
         .catch(error => {
@@ -522,60 +621,7 @@ function createPeerConnection() {
             "音声が出ない場合は，画面を一度押してください。"
           );
         });
-
-      return;
     }
-
-    /*
-      映像は現在どおり，
-      viewer側だけで表示する。
-    */
-    if (
-      event.track.kind !== "video" ||
-      role !== "viewer"
-    ) {
-      return;
-    }
-
-    if (remoteStream) {
-      videoElement.srcObject =
-        remoteStream;
-    } else {
-      const videoStream =
-        new MediaStream();
-
-      videoStream.addTrack(
-        event.track
-      );
-
-      videoElement.srcObject =
-        videoStream;
-    }
-
-    /*
-      音声は専用audio要素で再生するため，
-      video要素自身はミュートする。
-    */
-    videoElement.muted = true;
-
-    videoElement.classList.remove(
-      "hidden"
-    );
-
-    scheduleStopButtonGeometryApply();
-
-    videoElement.play()
-      .then(() => {
-        scheduleStopButtonGeometryApply();
-      })
-      .catch(() => {
-        scheduleStopButtonGeometryApply();
-
-        setStatus(
-          "映像を受信しました。\n" +
-          "再生されない場合は，黒い映像部分を一度押してください。"
-        );
-      });
   };
 
   connection.onconnectionstatechange =
