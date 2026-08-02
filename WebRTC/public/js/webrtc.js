@@ -486,20 +486,15 @@ connection.ontrack =
       event.streams;
 
     /*
-      受信側では，映像と音声を
-      同じvideo要素で再生する。
+      カメラ受信側。
 
-      iPhoneでは，非表示のaudio要素よりも
-      映像と一体で再生した方が安定する。
+      相手の映像と相手の音声を
+      同じvideo要素で再生する。
     */
     if (role === "viewer") {
       let viewerStream =
         remoteStream;
 
-      /*
-        event.streamsにストリームがない場合は，
-        video要素用のストリームを作る。
-      */
       if (!viewerStream) {
         if (
           videoElement.srcObject
@@ -512,7 +507,7 @@ connection.ontrack =
             new MediaStream();
         }
 
-        const trackAlreadyAdded =
+        const alreadyAdded =
           viewerStream
             .getTracks()
             .some(
@@ -521,27 +516,19 @@ connection.ontrack =
                 event.track.id
             );
 
-        if (!trackAlreadyAdded) {
+        if (!alreadyAdded) {
           viewerStream.addTrack(
             event.track
           );
         }
       }
 
-      if (
-        videoElement.srcObject !==
-        viewerStream
-      ) {
-        videoElement.srcObject =
-          viewerStream;
-      }
+      videoElement.srcObject =
+        viewerStream;
 
-      /*
-        HTMLにmuted属性が付いている場合も
-        確実に解除する。
-      */
       videoElement.muted = false;
       videoElement.defaultMuted = false;
+
       videoElement.removeAttribute(
         "muted"
       );
@@ -560,11 +547,9 @@ connection.ontrack =
         })
         .catch(error => {
           console.warn(
-            "映像・音声を自動再生できませんでした。",
+            "映像・音声を再生できませんでした。",
             error
           );
-
-          scheduleStopButtonGeometryApply();
 
           setStatus(
             "映像と音声を受信しました。\n" +
@@ -575,50 +560,76 @@ connection.ontrack =
       return;
     }
 
+
     /*
-      送信側では自分の映像をvideo要素に
-      表示しているため，相手から届く音声は
-      専用audio要素で再生する。
+      カメラ送信側。
+
+      自分のカメラ映像に，
+      相手から届いた音声だけを組み合わせる。
+
+      自分のマイク音声は入れないので，
+      自分の声が自分から再生されることはない。
     */
-    if (event.track.kind === "audio") {
-      const remoteAudioElement =
-        getRemoteAudioElement();
+    if (
+      role === "sender" &&
+      event.track.kind === "audio"
+    ) {
+      const senderPlaybackStream =
+        new MediaStream();
 
-      if (remoteStream) {
-        remoteAudioElement.srcObject =
-          remoteStream;
-      } else {
-        const audioStream =
-          new MediaStream();
-
-        audioStream.addTrack(
-          event.track
-        );
-
-        remoteAudioElement.srcObject =
-          audioStream;
+      /*
+        自分のカメラ映像だけを追加する。
+        localStream内のマイクは追加しない。
+      */
+      if (localStream) {
+        for (
+          const videoTrack
+          of localStream.getVideoTracks()
+        ) {
+          senderPlaybackStream.addTrack(
+            videoTrack
+          );
+        }
       }
 
-      remoteAudioElement.muted = false;
-      remoteAudioElement.defaultMuted =
-        false;
+      /*
+        相手から届いた音声を追加する。
+      */
+      senderPlaybackStream.addTrack(
+        event.track
+      );
 
-      remoteAudioElement.removeAttribute(
+      videoElement.srcObject =
+        senderPlaybackStream;
+
+      videoElement.muted = false;
+      videoElement.defaultMuted = false;
+
+      videoElement.removeAttribute(
         "muted"
       );
 
-      remoteAudioElement.volume = 1;
+      videoElement.volume = 1;
 
-      remoteAudioElement.play()
+      videoElement.classList.remove(
+        "hidden"
+      );
+
+      scheduleStopButtonGeometryApply();
+
+      videoElement.play()
+        .then(() => {
+          scheduleStopButtonGeometryApply();
+        })
         .catch(error => {
           console.warn(
-            "相手音声を自動再生できませんでした。",
+            "相手音声を再生できませんでした。",
             error
           );
 
           setStatus(
             "相手の音声を受信しました。\n" +
-            "音声が出ない場合は，画面を一度押してください。"
+            "音声が出ない場合は，映像部分を一度押してください。"
           );
         });
     }
