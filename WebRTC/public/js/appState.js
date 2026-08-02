@@ -241,14 +241,17 @@ let localCameraEnabled = false;
 let remoteCameraEnabled = false;
 
 /*
+  WebRTC接続が成立し，
+  映像枠を表示してよい状態かどうか。
+
+  falseの間は，大映像・小窓・
+  「映像OFF」をすべて表示しない。
+*/
+let videoConnectionActive = false;
+
+/*
   両方の映像がONのとき，
   自分の映像を大映像にするかどうか。
-
-  false：
-  相手映像を大映像，自分映像を小窓。
-
-  true：
-  自分映像を大映像，相手映像を小窓。
 */
 let preferLocalVideoAsMain = false;
 
