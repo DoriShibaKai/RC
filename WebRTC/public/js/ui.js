@@ -101,8 +101,8 @@ function ensureMicrophoneSettingsControl() {
       </div>
     </div>
 
-   <p class="settingsGroupNote">
-  ページを開いたときはOFFから開始します。
+  <p class="settingsGroupNote">
+  初回はOFFです。変更した設定は次回も引き継がれます。
 </p>
   `;
 
@@ -145,6 +145,245 @@ function ensureMicrophoneSettingsControl() {
         );
       }
     }
+    );
+}
+
+
+/*
+  詳細設定内に映像設定を追加する。
+*/
+function ensureVideoSettingsControl() {
+
+  if (
+    document.getElementById(
+      "cameraEnabledToggle"
+    )
+  ) {
+    return;
+  }
+
+  const settingsContent =
+    document.querySelector(
+      "#settingsPanel .settingsContent"
+    );
+
+  if (!settingsContent) {
+
+    console.warn(
+      "詳細設定欄が見つからないため，" +
+      "映像設定を追加できませんでした。"
+    );
+
+    return;
+  }
+
+  const videoGroup =
+    document.createElement("section");
+
+  videoGroup.className =
+    "settingsGroup videoSettingsGroup";
+
+  videoGroup.innerHTML = `
+    <h3 class="settingsGroupTitle">
+      映像
+    </h3>
+
+    <div class="settingsGroupCards">
+
+      <div
+        class="
+          settingsSection
+          cameraSettingsSection
+        "
+      >
+        <div>
+          <div
+            style="
+              color: #eef3ff;
+              font-size: 16px;
+              font-weight: bold;
+            "
+          >
+            カメラ送信
+          </div>
+
+          <div
+            style="
+              margin-top: 4px;
+              color: #8998b6;
+              font-size: 13px;
+              line-height: 1.45;
+            "
+          >
+            自分の映像を相手側へ送信します。
+          </div>
+        </div>
+
+        <label
+          class="stopVisibilityControl"
+          for="cameraEnabledToggle"
+        >
+          <input
+            id="cameraEnabledToggle"
+            type="checkbox"
+          >
+
+          <span
+            class="stopVisibilitySwitch"
+            aria-hidden="true"
+          ></span>
+
+          <span
+            id="cameraEnabledState"
+            class="stopVisibilityState"
+          >
+            OFF
+          </span>
+        </label>
+      </div>
+
+      <div
+        class="
+          settingsSection
+          videoSwapSettingsSection
+        "
+      >
+        <div>
+          <div
+            style="
+              color: #eef3ff;
+              font-size: 16px;
+              font-weight: bold;
+            "
+          >
+            映像の入れ替え
+          </div>
+
+          <div
+            style="
+              margin-top: 4px;
+              color: #8998b6;
+              font-size: 13px;
+              line-height: 1.45;
+            "
+          >
+            自分の映像と相手の映像の大小を入れ替えます。
+          </div>
+        </div>
+
+        <label
+          class="stopVisibilityControl"
+          for="preferLocalVideoAsMainToggle"
+        >
+          <input
+            id="preferLocalVideoAsMainToggle"
+            type="checkbox"
+          >
+
+          <span
+            class="stopVisibilitySwitch"
+            aria-hidden="true"
+          ></span>
+
+          <span
+            id="preferLocalVideoAsMainState"
+            class="stopVisibilityState"
+          >
+            相手が大
+          </span>
+        </label>
+      </div>
+
+    </div>
+
+    <p class="settingsGroupNote">
+      片方の映像だけがONの場合は，
+      ONの映像を自動的に大きく表示します。
+    </p>
+  `;
+
+  /*
+    音声設定の直前へ映像設定を置く。
+  */
+  const microphoneGroup =
+    settingsContent.querySelector(
+      ".microphoneSettingsGroup"
+    );
+
+  if (microphoneGroup) {
+
+    settingsContent.insertBefore(
+      videoGroup,
+      microphoneGroup
+    );
+
+  } else {
+
+    settingsContent.appendChild(
+      videoGroup
+    );
+  }
+
+  const cameraToggle =
+    document.getElementById(
+      "cameraEnabledToggle"
+    );
+
+  const videoSwapToggle =
+    document.getElementById(
+      "preferLocalVideoAsMainToggle"
+    );
+
+  cameraToggle.addEventListener(
+    "change",
+    async () => {
+
+      const requestedEnabled =
+        cameraToggle.checked;
+
+      try {
+
+        await setCameraEnabled(
+          requestedEnabled
+        );
+
+        updateVideoSettingsDisplay();
+        saveSettings();
+
+      } catch (error) {
+
+        console.error(
+          "カメラ設定を変更できませんでした。",
+          error
+        );
+
+        cameraToggle.checked =
+          localCameraEnabled;
+
+        updateVideoSettingsDisplay();
+
+        setStatus(
+          "カメラを開始できませんでした。\n" +
+          error.message
+        );
+      }
+    }
+  );
+
+  videoSwapToggle.addEventListener(
+    "change",
+    () => {
+
+      preferLocalVideoAsMain =
+        videoSwapToggle.checked;
+
+      updateVideoSettingsDisplay();
+      updateVideoLayout();
+
+      scheduleStopButtonGeometryApply();
+
+      saveSettings();
+    }
   );
 }
 
@@ -170,10 +409,65 @@ function updateMicrophoneSettingsDisplay() {
   toggle.checked =
     microphoneEnabled;
 
-  state.textContent =
+   state.textContent =
     microphoneEnabled
       ? "ON"
       : "OFF";
+}
+
+
+/*
+  映像設定欄を現在の状態へ合わせる。
+*/
+function updateVideoSettingsDisplay() {
+
+  const cameraToggle =
+    document.getElementById(
+      "cameraEnabledToggle"
+    );
+
+  const cameraState =
+    document.getElementById(
+      "cameraEnabledState"
+    );
+
+  const videoSwapToggle =
+    document.getElementById(
+      "preferLocalVideoAsMainToggle"
+    );
+
+  const videoSwapState =
+    document.getElementById(
+      "preferLocalVideoAsMainState"
+    );
+
+  if (
+    cameraToggle &&
+    cameraState
+  ) {
+
+    cameraToggle.checked =
+      localCameraEnabled;
+
+    cameraState.textContent =
+      localCameraEnabled
+        ? "ON"
+        : "OFF";
+  }
+
+  if (
+    videoSwapToggle &&
+    videoSwapState
+  ) {
+
+    videoSwapToggle.checked =
+      preferLocalVideoAsMain;
+
+    videoSwapState.textContent =
+      preferLocalVideoAsMain
+        ? "自分が大"
+        : "相手が大";
+  }
 }
 
 
@@ -1441,7 +1735,9 @@ function applyStopButtonVisibility() {
 function loadSettings() {
 
   const savedPcKey =
-    localStorage.getItem("pcStopKey");
+    localStorage.getItem(
+      "pcStopKey"
+    );
 
   if (savedPcKey !== null) {
     pcStopKey.value = savedPcKey;
@@ -1462,21 +1758,58 @@ function loadSettings() {
   applyStopButtonVisibility();
 
   /*
-    詳細設定内にマイク設定欄を作る。
+    詳細設定内に設定欄を作る。
   */
   ensureMicrophoneSettingsControl();
+  ensureVideoSettingsControl();
 
- /*
-  マイクはページを開くたびに
-  必ずOFFから開始する。
-*/
-microphoneEnabled = false;
+  /*
+    マイクの初回標準値はOFF。
 
-localStorage.removeItem(
-  "microphoneEnabled"
-);
+    保存値がある場合は，
+    前回の状態を復元する。
+  */
+  const savedMicrophoneEnabled =
+    localStorage.getItem(
+      "microphoneEnabled"
+    );
 
-updateMicrophoneSettingsDisplay();
+  microphoneEnabled =
+    savedMicrophoneEnabled === "true";
+
+  /*
+    カメラ設定は保存値がある場合だけ
+    ここで復元する。
+
+    保存値がない初回は，
+    接続時にsender＝ON，
+    viewer＝OFFを設定する。
+  */
+  const savedCameraEnabled =
+    localStorage.getItem(
+      "localCameraEnabled"
+    );
+
+  if (savedCameraEnabled !== null) {
+
+    localCameraEnabled =
+      savedCameraEnabled === "true";
+  }
+
+  /*
+    初回は相手映像を大きく表示する。
+  */
+  const savedPreferLocalVideoAsMain =
+    localStorage.getItem(
+      "preferLocalVideoAsMain"
+    );
+
+  preferLocalVideoAsMain =
+    savedPreferLocalVideoAsMain ===
+      "true";
+
+  updateMicrophoneSettingsDisplay();
+  updateVideoSettingsDisplay();
 }
 
 
@@ -1491,6 +1824,27 @@ function saveSettings() {
     "stopButtonVisible",
     String(
       stopButtonVisibleToggle.checked
+    )
+  );
+
+  localStorage.setItem(
+    "microphoneEnabled",
+    String(
+      microphoneEnabled
+    )
+  );
+
+  localStorage.setItem(
+    "localCameraEnabled",
+    String(
+      localCameraEnabled
+    )
+  );
+
+  localStorage.setItem(
+    "preferLocalVideoAsMain",
+    String(
+      preferLocalVideoAsMain
     )
   );
 }
