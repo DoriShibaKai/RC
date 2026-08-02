@@ -296,6 +296,196 @@ async function setMicrophoneEnabled(
   );
 }
 
+/*
+  現在この端末が持っている
+  カメラトラックを返す。
+*/
+function getExistingCameraTrack() {
+
+  if (!localStream) {
+    return null;
+  }
+
+  return (
+    localStream
+      .getVideoTracks()[0] ||
+    null
+  );
+}
+
+
+/*
+  必要な場合だけ端末のカメラを取得する。
+*/
+async function ensureCameraTrack() {
+
+  const existingTrack =
+    getExistingCameraTrack();
+
+  if (
+    existingTrack &&
+    existingTrack.readyState === "live"
+  ) {
+    return existingTrack;
+  }
+
+  localStream =
+    await navigator.mediaDevices
+      .getUserMedia({
+        video: {
+          facingMode: {
+            ideal: "environment"
+          },
+          width: {
+            ideal: 1280
+          },
+          height: {
+            ideal: 720
+          }
+        },
+
+        audio: false
+      });
+
+  return (
+    localStream
+      .getVideoTracks()[0]
+  );
+}
+
+
+/*
+  この端末の映像送受信用
+  Transceiverを探す。
+*/
+function findLocalVideoTransceiver() {
+
+  if (localVideoTransceiver) {
+    return localVideoTransceiver;
+  }
+
+  if (!peerConnection) {
+    return null;
+  }
+
+  localVideoTransceiver =
+    peerConnection
+      .getTransceivers()
+      .find(
+        transceiver =>
+          transceiver.receiver &&
+          transceiver.receiver.track &&
+          transceiver.receiver.track.kind ===
+            "video"
+      ) || null;
+
+  return localVideoTransceiver;
+}
+
+
+/*
+  この端末のカメラ状態を
+  相手へ通知する。
+*/
+function sendCameraState() {
+
+  sendSignal({
+    type: "camera-state",
+    enabled:
+      Boolean(localCameraEnabled)
+  });
+}
+
+
+/*
+  自分のカメラ送信を切り替える。
+
+  WebRTC接続は維持したまま，
+  映像トラックだけを
+  replaceTrack()で交換する。
+*/
+async function setCameraEnabled(enabled) {
+
+  localCameraEnabled =
+    Boolean(enabled);
+
+  /*
+    接続前は設定だけ保持する。
+  */
+  if (
+    !peerConnection ||
+    role === null
+  ) {
+    updateVideoLayout();
+    return;
+  }
+
+  const transceiver =
+    findLocalVideoTransceiver();
+
+  /*
+    viewer側でOffer到着前など，
+    映像Transceiverがまだない場合。
+  */
+  if (
+    !transceiver ||
+    !transceiver.sender
+  ) {
+    updateVideoLayout();
+    sendCameraState();
+    return;
+  }
+
+  if (localCameraEnabled) {
+
+    const cameraTrack =
+      await ensureCameraTrack();
+
+    cameraTrack.enabled = true;
+
+    await transceiver.sender
+      .replaceTrack(
+        cameraTrack
+      );
+
+    updateVideoLayout();
+    sendCameraState();
+
+    setStatus(
+      "カメラ送信をONにしました。"
+    );
+
+    return;
+  }
+
+  /*
+    カメラOFF。
+
+    接続は維持したまま，
+    映像トラックだけを外す。
+  */
+  await transceiver.sender
+    .replaceTrack(null);
+
+  if (localStream) {
+    for (
+      const track
+      of localStream.getTracks()
+    ) {
+      track.stop();
+    }
+
+    localStream = null;
+  }
+
+  updateVideoLayout();
+  sendCameraState();
+
+  setStatus(
+    "カメラ送信をOFFにしました。"
+  );
+}
+
 
 /*
   相手側が通信から離れたときの安全処理。
@@ -345,23 +535,15 @@ function handlePeerCommunicationLoss(
   xyDisplay.textContent =
     "X：0.00　Y：0.00";
 
-  /*
-    PCなどの受信側では，
-    映像ストリームだけを外して黒画面にする。
-
-    hiddenは付けないため，
-    映像枠と「解除」ボタンは残る。
+    /*
+    相手との通信が切れた場合は，
+    黒い映像枠も含めて非表示にする。
   */
-  if (role === "viewer") {
-    videoElement.pause();
-    videoElement.srcObject = null;
-    videoElement.muted = true;
-    videoElement.classList.remove(
-      "hidden"
-    );
+  videoConnectionActive = false;
+  remoteCameraEnabled = false;
+  remoteVideoStream = null;
 
-    scheduleStopButtonGeometryApply();
-  }
+  updateVideoLayout();
 
   headerBadgeDot.classList.remove(
     "connected"
@@ -558,62 +740,52 @@ connection.ontrack =
     }
 
 
-    /*
+      /*
       相手から届いた映像。
 
-      映像を表示するのは
-      カメラ受信側だけ。
+      sender／viewerの役割に関係なく，
+      相手映像専用ストリームとして保持する。
     */
     if (
-      event.track.kind !== "video" ||
-      role !== "viewer"
+      event.track.kind !== "video"
     ) {
       return;
     }
 
-    const remoteVideoStream =
+    remoteVideoStream =
       new MediaStream([
         event.track
       ]);
 
-    videoElement.srcObject =
-      remoteVideoStream;
-
     /*
-      相手音声は専用audio要素で再生するため，
-      video要素は常にミュートする。
+      replaceTrack(null)中は，
+      映像トラック自体は存在しても
+      実映像が届かない場合がある。
+
+      実際のON／OFF状態は
+      camera-state通知で管理する。
     */
-    videoElement.muted = true;
-    videoElement.defaultMuted = true;
+    event.track.onunmute =
+      () => {
+        updateVideoLayout();
+        scheduleStopButtonGeometryApply();
+      };
 
-    videoElement.setAttribute(
-      "muted",
-      ""
-    );
+    event.track.onmute =
+      () => {
+        updateVideoLayout();
+      };
 
-    videoElement.classList.remove(
-      "hidden"
-    );
+    event.track.onended =
+      () => {
+        remoteCameraEnabled = false;
+        remoteVideoStream = null;
 
+        updateVideoLayout();
+      };
+
+    updateVideoLayout();
     scheduleStopButtonGeometryApply();
-
-    videoElement.play()
-      .then(() => {
-        scheduleStopButtonGeometryApply();
-      })
-      .catch(error => {
-        console.warn(
-          "相手映像を自動再生できませんでした。",
-          error
-        );
-
-        scheduleStopButtonGeometryApply();
-
-        setStatus(
-          "映像を受信しました。\n" +
-          "再生されない場合は，映像部分を一度押してください。"
-        );
-      });
   };
 
   connection.onconnectionstatechange =
@@ -636,13 +808,18 @@ connection.ontrack =
         state
       );
 
-      if (state === "connected") {
-        setStatus(
-          role === "sender"
-            ? "接続成功：iPhoneの映像を送信しています。"
-            : "接続成功：iPhoneの映像を受信しています。"
-        );
+            if (state === "connected") {
 
+        videoConnectionActive = true;
+
+        updateVideoLayout();
+        sendCameraState();
+
+        scheduleStopButtonGeometryApply();
+
+        setStatus(
+          "接続成功：映像と音声を接続しました。"
+        );
         /*
           接続が復旧しても，
           非常停止状態は自動解除しない。
@@ -713,43 +890,46 @@ async function rebuildPeerConnectionForReconnect() {
   closeDriveChannelSafely();
   closePeerConnectionSafely();
 
-  localAudioTransceiver = null;
+   localAudioTransceiver = null;
+  localVideoTransceiver = null;
+
+  remoteVideoStream = null;
+  remoteCameraEnabled = false;
+  videoConnectionActive = false;
+
   offerStarted = false;
 
-  /*
-    受信側では，
-    再接続中も黒い映像枠と
-    「解除」ボタンを残す。
-  */
-  if (role === "viewer") {
-    videoElement.pause();
-    videoElement.srcObject = null;
-    videoElement.muted = true;
-
-    videoElement.classList.remove(
-      "hidden"
-    );
-
-    scheduleStopButtonGeometryApply();
-  }
+  updateVideoLayout();
 
   createPeerConnection();
 
-  /*
+   /*
     Offerを作るsender側だけ，
-    Offer作成前に映像と音声枠を準備する。
+    Offer作成前に映像と音声の枠を
+    それぞれ1本ずつ準備する。
   */
   if (role === "sender") {
-    if (localStream) {
-      for (
-        const videoTrack
-        of localStream.getVideoTracks()
-      ) {
-        peerConnection.addTrack(
-          videoTrack,
-          localStream
+
+    localVideoTransceiver =
+      peerConnection.addTransceiver(
+        "video",
+        {
+          direction: "sendrecv"
+        }
+      );
+
+    if (localCameraEnabled) {
+
+      const cameraTrack =
+        await ensureCameraTrack();
+
+      cameraTrack.enabled = true;
+
+      await localVideoTransceiver
+        .sender
+        .replaceTrack(
+          cameraTrack
         );
-      }
     }
 
     localAudioTransceiver =
@@ -761,6 +941,7 @@ async function rebuildPeerConnectionForReconnect() {
       );
 
     if (microphoneEnabled) {
+
       const microphoneTrack =
         await ensureMicrophoneTrack();
 
@@ -941,6 +1122,20 @@ function connectWebSocket(roomName) {
 
 
 async function handleSignal(message) {
+
+  if (
+    message.type ===
+      "camera-state"
+  ) {
+    remoteCameraEnabled =
+      Boolean(message.enabled);
+
+    updateVideoLayout();
+    scheduleStopButtonGeometryApply();
+
+    return;
+  }
+
   if (message.type === "joined") {
     return;
   }
@@ -1115,7 +1310,7 @@ async function receiveOffer(message) {
       message.offer
     );
 
-  const videoTransceiver =
+    localVideoTransceiver =
     peerConnection
       .getTransceivers()
       .find(
@@ -1124,11 +1319,39 @@ async function receiveOffer(message) {
           transceiver.receiver.track &&
           transceiver.receiver.track.kind ===
             "video"
+      ) || null;
+
+  if (!localVideoTransceiver) {
+    throw new Error(
+      "映像用のWebRTC接続を準備できませんでした。"
+    );
+  }
+
+  /*
+    viewer側も映像を送受信できる状態で
+    Answerを作る。
+  */
+  localVideoTransceiver.direction =
+    "sendrecv";
+
+  if (localCameraEnabled) {
+
+    const cameraTrack =
+      await ensureCameraTrack();
+
+    cameraTrack.enabled = true;
+
+    await localVideoTransceiver
+      .sender
+      .replaceTrack(
+        cameraTrack
       );
 
-  if (videoTransceiver) {
-    videoTransceiver.direction =
-      "recvonly";
+  } else {
+
+    await localVideoTransceiver
+      .sender
+      .replaceTrack(null);
   }
 
   localAudioTransceiver =
@@ -1205,74 +1428,45 @@ async function startSender() {
     );
 
     offerStarted = false;
-    setControlsConnected();
+setControlsConnected();
 
-    setStatus(
-      "カメラの使用許可を確認しています。"
-    );
+/*
+  カメラ送信側の初回標準値はON。
+*/
+localCameraEnabled = true;
+remoteCameraEnabled = false;
+videoConnectionActive = false;
 
-    /*
-      カメラ送信開始時は，
-      映像だけを取得する。
+setStatus(
+  "カメラの使用許可を確認しています。"
+);
 
-      マイクはONの場合だけ
-      ensureMicrophoneTrack()で取得する。
-    */
-    localStream =
-      await navigator.mediaDevices
-        .getUserMedia({
-          video: {
-            facingMode: {
-              ideal: "environment"
-            },
-            width: {
-              ideal: 1280
-            },
-            height: {
-              ideal: 720
-            }
-          },
+    const cameraTrack =
+      await ensureCameraTrack();
 
-          audio: false
-        });
+    cameraTrack.enabled = true;
 
     updateMicrophoneSettingsDisplay();
-
-    videoElement.srcObject =
-      localStream;
-
-    videoElement.muted = true;
-    videoElement.defaultMuted = true;
-
-    videoElement.setAttribute(
-      "muted",
-      ""
-    );
-
-    videoElement.classList.remove(
-      "hidden"
-    );
-
-    scheduleStopButtonGeometryApply();
-
-    await videoElement.play();
-
-    scheduleStopButtonGeometryApply();
+    updateVideoLayout();
 
     createPeerConnection();
 
     /*
-      映像トラックだけを追加する。
+      映像Transceiverは必ず1本だけ作る。
     */
-    for (
-      const videoTrack
-      of localStream.getVideoTracks()
-    ) {
-      peerConnection.addTrack(
-        videoTrack,
-        localStream
+    localVideoTransceiver =
+      peerConnection.addTransceiver(
+        "video",
+        {
+          direction: "sendrecv"
+        }
       );
-    }
+
+    await localVideoTransceiver
+      .sender
+      .replaceTrack(
+        cameraTrack
+      );
 
     /*
       音声Transceiverは必ず1本だけ作る。
@@ -1325,8 +1519,17 @@ async function startSender() {
 
 
 async function startViewer() {
-  try {
+   try {
     role = "viewer";
+
+    /*
+      カメラ受信側の初回標準値はOFF。
+    */
+    localCameraEnabled = false;
+    remoteCameraEnabled = false;
+    videoConnectionActive = false;
+
+    updateVideoLayout();
 
     viewButton.classList.add(
       "selectedRole"
@@ -1470,10 +1673,15 @@ function stopAll(
     }
   }
 
-  closeDriveChannelSafely();
+ closeDriveChannelSafely();
 closePeerConnectionSafely();
 
 localAudioTransceiver = null;
+localVideoTransceiver = null;
+
+remoteVideoStream = null;
+remoteCameraEnabled = false;
+videoConnectionActive = false;
 
 if (localStream) {
   for (
@@ -1507,14 +1715,10 @@ if (remoteAudioElement) {
   remoteAudioElement.srcObject = null;
 }
 
-videoElement.pause();
-videoElement.srcObject = null;
-
-videoElement.classList.add(
-  "hidden"
-);
+updateVideoLayout();
 
 videoElement.muted = true;
+pipVideoElement.muted = true;
 
   joystickActive = false;
   joystickCandidate = false;
