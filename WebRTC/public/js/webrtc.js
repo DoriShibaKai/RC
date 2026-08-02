@@ -43,6 +43,235 @@ function getRoomName() {
 
 
 /*
+  この端末のマイク送信状態。
+
+  初期状態はOFF。
+  loadSettings()で保存値を読み込む。
+*/
+let microphoneEnabled = false;
+
+
+/*
+  受信側が取得したマイク専用ストリーム。
+
+  送信側は，既存のlocalStream内に
+  カメラとマイクの両方を持つ。
+*/
+let localMicrophoneStream = null;
+
+
+/*
+  受信側から音声を送るための
+  RTCRtpTransceiver。
+*/
+let localAudioTransceiver = null;
+
+
+/*
+  相手から届いた音声を再生する
+  audio要素を取得する。
+
+  まだ存在しない場合は自動で作る。
+*/
+function getRemoteAudioElement() {
+  let audioElement =
+    document.getElementById(
+      "remoteAudioElement"
+    );
+
+  if (audioElement) {
+    return audioElement;
+  }
+
+  audioElement =
+    document.createElement("audio");
+
+  audioElement.id =
+    "remoteAudioElement";
+
+  audioElement.autoplay = true;
+  audioElement.playsInline = true;
+
+  /*
+    相手音声を再生するため，
+    mutedにはしない。
+  */
+  audioElement.muted = false;
+
+  /*
+    画面上には表示しない。
+  */
+  audioElement.style.display = "none";
+
+  document.body.appendChild(
+    audioElement
+  );
+
+  return audioElement;
+}
+
+
+/*
+  現在この端末が持っている
+  マイクトラックを返す。
+*/
+function getExistingMicrophoneTrack() {
+  if (localStream) {
+    const track =
+      localStream
+        .getAudioTracks()[0];
+
+    if (track) {
+      return track;
+    }
+  }
+
+  if (localMicrophoneStream) {
+    const track =
+      localMicrophoneStream
+        .getAudioTracks()[0];
+
+    if (track) {
+      return track;
+    }
+  }
+
+  return null;
+}
+
+
+/*
+  必要な場合だけ端末のマイクを取得する。
+*/
+async function ensureMicrophoneTrack() {
+  const existingTrack =
+    getExistingMicrophoneTrack();
+
+  if (
+    existingTrack &&
+    existingTrack.readyState === "live"
+  ) {
+    return existingTrack;
+  }
+
+  localMicrophoneStream =
+    await navigator.mediaDevices
+      .getUserMedia({
+        video: false,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+  return localMicrophoneStream
+    .getAudioTracks()[0];
+}
+
+
+/*
+  受信側の音声送信用transceiverを探す。
+*/
+function findLocalAudioTransceiver() {
+  if (localAudioTransceiver) {
+    return localAudioTransceiver;
+  }
+
+  if (!peerConnection) {
+    return null;
+  }
+
+  localAudioTransceiver =
+    peerConnection
+      .getTransceivers()
+      .find(
+        transceiver =>
+          transceiver.receiver &&
+          transceiver.receiver.track &&
+          transceiver.receiver.track.kind ===
+            "audio"
+      ) || null;
+
+  return localAudioTransceiver;
+}
+
+
+/*
+  マイクのON／OFFを切り替える。
+
+  OFFでも接続自体は切らず，
+  音声トラックだけを無効化する。
+*/
+async function setMicrophoneEnabled(
+  enabled
+) {
+  microphoneEnabled =
+    Boolean(enabled);
+
+  let microphoneTrack =
+    getExistingMicrophoneTrack();
+
+  /*
+    接続前にONが選ばれた場合は，
+    設定だけ記録する。
+
+    実際のマイク取得は接続開始時に行う。
+  */
+  if (
+    microphoneEnabled &&
+    role !== null &&
+    !microphoneTrack
+  ) {
+    microphoneTrack =
+      await ensureMicrophoneTrack();
+  }
+
+  if (microphoneTrack) {
+    microphoneTrack.enabled =
+      microphoneEnabled;
+  }
+
+  /*
+    受信側は，取得したマイクトラックを
+    既存の音声senderへ設定する。
+
+    replaceTrackなので，
+    通常はWebRTC接続を作り直さなくてよい。
+  */
+  if (
+    role === "viewer" &&
+    peerConnection
+  ) {
+    const transceiver =
+      findLocalAudioTransceiver();
+
+    if (
+      transceiver &&
+      transceiver.sender
+    ) {
+      await transceiver.sender
+        .replaceTrack(
+          microphoneTrack || null
+        );
+    }
+  }
+
+  updateMicrophoneSettingsDisplay();
+
+  if (microphoneEnabled) {
+    setStatus(
+      "マイク送信をONにしました。"
+    );
+  } else {
+    setStatus(
+      "マイク送信をOFFにしました。"
+    );
+  }
+}
+
+
+/*
   相手側が通信から離れたときの安全処理。
 
   stopAll()は使わない。
@@ -207,50 +436,103 @@ function createPeerConnection() {
     };
 
   connection.ontrack =
-    event => {
-      if (role !== "viewer") {
-        return;
-      }
+ connection.ontrack =
+  event => {
+    const [remoteStream] =
+      event.streams;
 
-      const [remoteStream] =
-        event.streams;
+    /*
+      音声トラックは，
+      sender／viewerの両方で再生する。
+    */
+    if (event.track.kind === "audio") {
+      const remoteAudioElement =
+        getRemoteAudioElement();
 
       if (remoteStream) {
-        videoElement.srcObject =
+        remoteAudioElement.srcObject =
           remoteStream;
       } else {
-        const stream =
+        const audioStream =
           new MediaStream();
 
-        stream.addTrack(
+        audioStream.addTrack(
           event.track
         );
 
-        videoElement.srcObject =
-          stream;
+        remoteAudioElement.srcObject =
+          audioStream;
       }
 
-      videoElement.muted = false;
+      remoteAudioElement.muted = false;
 
-      videoElement.classList.remove(
-        "hidden"
-      );
-
-      scheduleStopButtonGeometryApply();
-
-      videoElement.play()
-        .then(() => {
-          scheduleStopButtonGeometryApply();
-        })
-        .catch(() => {
-          scheduleStopButtonGeometryApply();
+      remoteAudioElement.play()
+        .catch(error => {
+          console.warn(
+            "相手音声を自動再生できませんでした。",
+            error
+          );
 
           setStatus(
-            "映像を受信しました。\n" +
-            "再生されない場合は，黒い映像部分を一度押してください。"
+            "相手の音声を受信しました。\n" +
+            "音声が出ない場合は，画面を一度押してください。"
           );
         });
-    };
+
+      return;
+    }
+
+    /*
+      映像は現在どおり，
+      viewer側だけで表示する。
+    */
+    if (
+      event.track.kind !== "video" ||
+      role !== "viewer"
+    ) {
+      return;
+    }
+
+    if (remoteStream) {
+      videoElement.srcObject =
+        remoteStream;
+    } else {
+      const videoStream =
+        new MediaStream();
+
+      videoStream.addTrack(
+        event.track
+      );
+
+      videoElement.srcObject =
+        videoStream;
+    }
+
+    /*
+      音声は専用audio要素で再生するため，
+      video要素自身はミュートする。
+    */
+    videoElement.muted = true;
+
+    videoElement.classList.remove(
+      "hidden"
+    );
+
+    scheduleStopButtonGeometryApply();
+
+    videoElement.play()
+      .then(() => {
+        scheduleStopButtonGeometryApply();
+      })
+      .catch(() => {
+        scheduleStopButtonGeometryApply();
+
+        setStatus(
+          "映像を受信しました。\n" +
+          "再生されない場合は，黒い映像部分を一度押してください。"
+        );
+      });
+  };
 
   connection.onconnectionstatechange =
     () => {
@@ -339,7 +621,7 @@ function sendSignal(data) {
 }
 
 
-function rebuildPeerConnectionForReconnect() {
+async function rebuildPeerConnectionForReconnect() {
   stopDriveCommandRepeater();
   stopDriveCommunicationWatchdog();
 
@@ -386,21 +668,39 @@ function rebuildPeerConnectionForReconnect() {
         );
       }
     }
-  } else if (role === "viewer") {
-    peerConnection.addTransceiver(
-      "video",
-      {
-        direction: "recvonly"
-      }
-    );
+ } else if (role === "viewer") {
+  peerConnection.addTransceiver(
+    "video",
+    {
+      direction: "recvonly"
+    }
+  );
 
+  /*
+    相手音声を受信しながら，
+    この端末のマイク音声も送れるようにする。
+  */
+  localAudioTransceiver =
     peerConnection.addTransceiver(
       "audio",
       {
-        direction: "recvonly"
+        direction: "sendrecv"
       }
     );
+
+  if (microphoneEnabled) {
+    const microphoneTrack =
+      await ensureMicrophoneTrack();
+
+    microphoneTrack.enabled = true;
+
+    await localAudioTransceiver
+      .sender
+      .replaceTrack(
+        microphoneTrack
+      );
   }
+}
 
   headerBadgeDot.classList.remove(
     "connected"
@@ -577,7 +877,7 @@ async function handleSignal(message) {
       古いWebRTC接続を捨てて
       新しい接続を準備する。
     */
-    rebuildPeerConnectionForReconnect();
+   await rebuildPeerConnectionForReconnect();
 
     if (role === "sender") {
       sendSignal({
@@ -724,22 +1024,36 @@ async function createAndSendOffer() {
 
 async function receiveOffer(message) {
   if (!peerConnection) {
-    createPeerConnection();
+  createPeerConnection();
 
-    peerConnection.addTransceiver(
-      "video",
-      {
-        direction: "recvonly"
-      }
-    );
+  peerConnection.addTransceiver(
+    "video",
+    {
+      direction: "recvonly"
+    }
+  );
 
+  localAudioTransceiver =
     peerConnection.addTransceiver(
       "audio",
       {
-        direction: "recvonly"
+        direction: "sendrecv"
       }
     );
+
+  if (microphoneEnabled) {
+    const microphoneTrack =
+      await ensureMicrophoneTrack();
+
+    microphoneTrack.enabled = true;
+
+    await localAudioTransceiver
+      .sender
+      .replaceTrack(
+        microphoneTrack
+      );
   }
+}
 
   await peerConnection
     .setRemoteDescription(
@@ -786,24 +1100,45 @@ async function startSender() {
     );
 
     localStream =
-      await navigator.mediaDevices
-        .getUserMedia({
-          video: {
-            facingMode: {
-              ideal: "environment"
-            },
-            width: {
-              ideal: 1280
-            },
-            height: {
-              ideal: 720
-            }
-          },
-          audio: true
-        });
+  await navigator.mediaDevices
+    .getUserMedia({
+      video: {
+        facingMode: {
+          ideal: "environment"
+        },
+        width: {
+          ideal: 1280
+        },
+        height: {
+          ideal: 720
+        }
+      },
 
-    videoElement.srcObject =
-      localStream;
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+
+/*
+  保存されているマイク設定を反映する。
+
+  初期値はOFFなので，
+  許可済みでも音声は相手へ送らない。
+*/
+for (
+  const audioTrack
+  of localStream.getAudioTracks()
+) {
+  audioTrack.enabled =
+    microphoneEnabled;
+}
+
+updateMicrophoneSettingsDisplay();
+
+videoElement.srcObject =
+  localStream;
 
     videoElement.muted = true;
 
@@ -868,23 +1203,44 @@ async function startViewer() {
 
     createPeerConnection();
 
-    peerConnection.addTransceiver(
-      "video",
-      {
-        direction: "recvonly"
-      }
-    );
+peerConnection.addTransceiver(
+  "video",
+  {
+    direction: "recvonly"
+  }
+);
 
-    peerConnection.addTransceiver(
-      "audio",
-      {
-        direction: "recvonly"
-      }
-    );
+/*
+  音声だけは双方向にする。
+*/
+localAudioTransceiver =
+  peerConnection.addTransceiver(
+    "audio",
+    {
+      direction: "sendrecv"
+    }
+  );
 
-    await connectWebSocket(
-      getRoomName()
+if (microphoneEnabled) {
+  setStatus(
+    "パソコンのマイク使用許可を確認しています。"
+  );
+
+  const microphoneTrack =
+    await ensureMicrophoneTrack();
+
+  microphoneTrack.enabled = true;
+
+  await localAudioTransceiver
+    .sender
+    .replaceTrack(
+      microphoneTrack
     );
+}
+
+await connectWebSocket(
+  getRoomName()
+);
   } catch (error) {
     console.error(error);
 
@@ -1006,27 +1362,50 @@ function stopAll(
   }
 
   closeDriveChannelSafely();
-  closePeerConnectionSafely();
+closePeerConnectionSafely();
 
-  if (localStream) {
-    for (
-      const track
-      of localStream.getTracks()
-    ) {
-      track.stop();
-    }
+localAudioTransceiver = null;
 
-    localStream = null;
+if (localStream) {
+  for (
+    const track
+    of localStream.getTracks()
+  ) {
+    track.stop();
   }
 
-  videoElement.pause();
-  videoElement.srcObject = null;
+  localStream = null;
+}
 
-  videoElement.classList.add(
-    "hidden"
+if (localMicrophoneStream) {
+  for (
+    const track
+    of localMicrophoneStream.getTracks()
+  ) {
+    track.stop();
+  }
+
+  localMicrophoneStream = null;
+}
+
+const remoteAudioElement =
+  document.getElementById(
+    "remoteAudioElement"
   );
 
-  videoElement.muted = true;
+if (remoteAudioElement) {
+  remoteAudioElement.pause();
+  remoteAudioElement.srcObject = null;
+}
+
+videoElement.pause();
+videoElement.srcObject = null;
+
+videoElement.classList.add(
+  "hidden"
+);
+
+videoElement.muted = true;
 
   joystickActive = false;
   joystickCandidate = false;
