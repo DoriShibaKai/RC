@@ -7,8 +7,40 @@
     const stopButton = document.getElementById("stopButton");
     const statusElement = document.getElementById("status");
     const driveStatusElement = document.getElementById("driveStatus");
-    const videoElement =
+   /*
+  基本映像として表示するvideo要素。
+
+  既存コードとの互換性を保つため，
+  変数名videoElementは今の段階では残す。
+*/
+const videoElement =
   document.getElementById("video");
+
+/*
+  小窓映像用video要素。
+*/
+const pipVideoElement =
+  document.getElementById("pipVideo");
+
+/*
+  小窓全体。
+
+  後でドラッグ移動と，
+  ジョイスティック操作の除外判定に使用する。
+*/
+const pipVideoContainer =
+  document.getElementById(
+    "pipVideoContainer"
+  );
+
+/*
+  両方の映像がOFFのときに，
+  左下へ「映像OFF」と表示する。
+*/
+const videoOffIndicator =
+  document.getElementById(
+    "videoOffIndicator"
+  );
 
 const videoWrapper =
   document.getElementById("videoWrapper");
@@ -169,12 +201,80 @@ let stopEditStartHeight = 0;
     const knobRadius = 25;
     const maxKnobDistance = joystickRadius - knobRadius;
 
-       let role = null;
-    let socket = null;
-    let peerConnection = null;
-    let localStream = null;
-    let offerStarted = false;
-    let driveChannel = null;
+     let role = null;
+let socket = null;
+let peerConnection = null;
+
+/*
+  自分のカメラ映像を保持するストリーム。
+
+  現在のlocalStreamという名前は，
+  既存コードとの互換性のため残す。
+*/
+let localStream = null;
+
+/*
+  相手から受信した映像トラックを保持する
+  専用ストリーム。
+*/
+let remoteVideoStream = null;
+
+/*
+  映像送受信用のRTCRtpTransceiver。
+
+  音声のlocalAudioTransceiverと同じ考え方で，
+  後の段階で使用する。
+*/
+let localVideoTransceiver = null;
+
+/*
+  この端末のカメラ送信設定。
+
+  初回標準値はroleによって変えるため，
+  role決定後に設定する。
+*/
+let localCameraEnabled = false;
+
+/*
+  相手端末が通知してきたカメラ状態。
+*/
+let remoteCameraEnabled = false;
+
+/*
+  両方の映像がONのとき，
+  自分の映像を大映像にするかどうか。
+
+  false：
+  相手映像を大映像，自分映像を小窓。
+
+  true：
+  自分映像を大映像，相手映像を小窓。
+*/
+let preferLocalVideoAsMain = false;
+
+/*
+  小窓の保存位置。
+
+  0～1の比率で保持し，
+  PC・iPhone・全画面で再計算できるようにする。
+*/
+let pipVideoPosition = {
+  xRatio: 0.78,
+  yRatio: 0.06
+};
+
+/*
+  小窓をドラッグしている状態。
+*/
+let pipDragActive = false;
+let pipDragPointerId = null;
+let pipDragStartX = 0;
+let pipDragStartY = 0;
+let pipDragStartLeft = 0;
+let pipDragStartTop = 0;
+
+let offerStarted = false;
+let driveChannel = null;
 
     // 「すべて切断」の確認応答待ち
     let disconnectAckTimer = null;
