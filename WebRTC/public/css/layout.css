@@ -452,6 +452,20 @@ input:disabled {
 }
 
 /*
+  WebRTC接続中だが，
+  自分・相手の両映像がOFFの場合。
+
+  映像トラックがなくても，
+  黒い16:9の基本映像枠を表示する。
+*/
+#videoWrapper
+  .mainVideo.emptyVideoFrame {
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  background: #000000;
+}
+
+/*
   小窓全体。
 
   初期位置は右上。
