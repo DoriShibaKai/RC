@@ -1336,23 +1336,23 @@ async function receiveOffer(message) {
 
   if (localCameraEnabled) {
 
-    const cameraTrack =
-      await ensureCameraTrack();
+  const cameraTrack =
+    await ensureCameraTrack();
 
-    cameraTrack.enabled = true;
+  cameraTrack.enabled = true;
 
-    await localVideoTransceiver
-      .sender
-      .replaceTrack(
-        cameraTrack
-      );
+  await localVideoTransceiver
+    .sender
+    .replaceTrack(
+      cameraTrack
+    );
 
-  } else {
+} else {
 
-    await localVideoTransceiver
-      .sender
-      .replaceTrack(null);
-  }
+  await localVideoTransceiver
+    .sender
+    .replaceTrack(null);
+}
 
   localAudioTransceiver =
     peerConnection
@@ -1431,25 +1431,48 @@ async function startSender() {
 setControlsConnected();
 
 /*
-  カメラ送信側の初回標準値はON。
+  保存されたカメラ設定がある場合は，
+  その設定を使用する。
+
+  保存値がない初回だけ，
+  カメラ送信側の標準値をONにする。
 */
-localCameraEnabled = true;
+const savedCameraEnabled =
+  localStorage.getItem(
+    "localCameraEnabled"
+  );
+
+localCameraEnabled =
+  savedCameraEnabled === null
+    ? true
+    : savedCameraEnabled === "true";
+
 remoteCameraEnabled = false;
 videoConnectionActive = false;
 
+updateVideoSettingsDisplay();
+
 setStatus(
-  "カメラの使用許可を確認しています。"
+  localCameraEnabled
+    ? "カメラの使用許可を確認しています。"
+    : "カメラ送信OFFで接続を開始します。"
 );
 
-    const cameraTrack =
-      await ensureCameraTrack();
+let cameraTrack = null;
 
-    cameraTrack.enabled = true;
+if (localCameraEnabled) {
 
-    updateMicrophoneSettingsDisplay();
-    updateVideoLayout();
+  cameraTrack =
+    await ensureCameraTrack();
 
-    createPeerConnection();
+  cameraTrack.enabled = true;
+}
+
+updateMicrophoneSettingsDisplay();
+updateVideoSettingsDisplay();
+updateVideoLayout();
+
+createPeerConnection();
 
     /*
       映像Transceiverは必ず1本だけ作る。
@@ -1503,9 +1526,9 @@ setStatus(
     console.error(error);
 
     setStatus(
-      "カメラを開始できませんでした。\n" +
-      error.message
-    );
+  "接続を開始できませんでした。\n" +
+  error.message
+);
 
     stopAll(
       false,
@@ -1522,14 +1545,28 @@ async function startViewer() {
    try {
     role = "viewer";
 
-    /*
-      カメラ受信側の初回標準値はOFF。
-    */
-    localCameraEnabled = false;
-    remoteCameraEnabled = false;
-    videoConnectionActive = false;
+   /*
+  保存されたカメラ設定がある場合は，
+  その設定を使用する。
 
-    updateVideoLayout();
+  保存値がない初回だけ，
+  カメラ受信側の標準値をOFFにする。
+*/
+const savedCameraEnabled =
+  localStorage.getItem(
+    "localCameraEnabled"
+  );
+
+localCameraEnabled =
+  savedCameraEnabled === null
+    ? false
+    : savedCameraEnabled === "true";
+
+remoteCameraEnabled = false;
+videoConnectionActive = false;
+
+updateVideoSettingsDisplay();
+updateVideoLayout();
 
     viewButton.classList.add(
       "selectedRole"
