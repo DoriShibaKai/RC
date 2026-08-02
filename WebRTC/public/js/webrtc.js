@@ -213,10 +213,8 @@ async function setMicrophoneEnabled(
     getExistingMicrophoneTrack();
 
   /*
-    接続前にONが選ばれた場合は，
-    設定だけ記録する。
-
-    実際のマイク取得は接続開始時に行う。
+    接続中に初めてONにした場合は，
+    ここでマイクを取得する。
   */
   if (
     microphoneEnabled &&
@@ -233,11 +231,8 @@ async function setMicrophoneEnabled(
   }
 
   /*
-    受信側は，取得したマイクトラックを
-    既存の音声senderへ設定する。
-
-    replaceTrackなので，
-    通常はWebRTC接続を作り直さなくてよい。
+    受信側では，PCのマイクトラックを
+    音声送信用senderへ設定する。
   */
   if (
     role === "viewer" &&
@@ -255,6 +250,19 @@ async function setMicrophoneEnabled(
           microphoneTrack || null
         );
     }
+
+    /*
+      接続完了後にPCマイクをONにした場合は，
+      新しい音声送信状態をiPhone側へ
+     伝えるため再ネゴシエーションする。
+    */
+    if (
+      microphoneEnabled &&
+      peerConnection.signalingState ===
+        "stable"
+    ) {
+      await renegotiateViewerAudio();
+    }
   }
 
   updateMicrophoneSettingsDisplay();
@@ -268,6 +276,43 @@ async function setMicrophoneEnabled(
       "マイク送信をOFFにしました。"
     );
   }
+}
+
+
+/*
+  PC側のマイク送信開始を，
+  新しいOfferとしてiPhone側へ通知する。
+*/
+async function renegotiateViewerAudio() {
+  if (
+    role !== "viewer" ||
+    !peerConnection ||
+    peerConnection.signalingState !==
+      "stable"
+  ) {
+    return;
+  }
+
+  const connection =
+    peerConnection;
+
+  const offer =
+    await connection.createOffer();
+
+  if (
+    peerConnection !== connection
+  ) {
+    return;
+  }
+
+  await connection
+    .setLocalDescription(offer);
+
+  sendSignal({
+    type: "viewer-audio-offer",
+    offer:
+      connection.localDescription
+  });
 }
 
 
@@ -436,7 +481,6 @@ function createPeerConnection() {
     };
 
   connection.ontrack =
- connection.ontrack =
   event => {
     const [remoteStream] =
       event.streams;
@@ -928,26 +972,86 @@ async function handleSignal(message) {
     return;
   }
 
-  if (
-    message.type === "answer" &&
-    role === "sender"
-  ) {
-    if (!peerConnection) {
-      return;
-    }
-
-    await peerConnection
-      .setRemoteDescription(
-        message.answer
-      );
-
+ if (
+  message.type === "answer" &&
+  role === "sender"
+) {
+  if (!peerConnection) {
     return;
   }
 
-  if (
-    message.type ===
-      "ice-candidate"
-  ) {
+  await peerConnection
+    .setRemoteDescription(
+      message.answer
+    );
+
+  return;
+}
+
+
+/*
+  PC側がマイク送信を開始したときの
+  再ネゴシエーションOffer。
+*/
+if (
+  message.type ===
+    "viewer-audio-offer" &&
+  role === "sender"
+) {
+  if (!peerConnection) {
+    return;
+  }
+
+  const connection =
+    peerConnection;
+
+  await connection
+    .setRemoteDescription(
+      message.offer
+    );
+
+  const answer =
+    await connection.createAnswer();
+
+  await connection
+    .setLocalDescription(answer);
+
+  sendSignal({
+    type: "viewer-audio-answer",
+    answer:
+      connection.localDescription
+  });
+
+  return;
+}
+
+
+/*
+  iPhone側から返されたAnswerを
+  PC側へ反映する。
+*/
+if (
+  message.type ===
+    "viewer-audio-answer" &&
+  role === "viewer"
+) {
+  if (!peerConnection) {
+    return;
+  }
+
+  await peerConnection
+    .setRemoteDescription(
+      message.answer
+    );
+
+  return;
+}
+
+
+if (
+  message.type ===
+    "ice-candidate"
+) {
     if (!peerConnection) {
       return;
     }
