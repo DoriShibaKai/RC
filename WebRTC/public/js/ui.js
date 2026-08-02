@@ -101,9 +101,9 @@ function ensureMicrophoneSettingsControl() {
       </div>
     </div>
 
-    <p class="settingsGroupNote">
-      この設定は端末ごとに保存されます。
-    </p>
+   <p class="settingsGroupNote">
+  ページを開いたときはOFFから開始します。
+</p>
   `;
 
   settingsContent.appendChild(
@@ -1195,21 +1195,17 @@ function loadSettings() {
   */
   ensureMicrophoneSettingsControl();
 
-  /*
-    初回はOFF。
+ /*
+  マイクはページを開くたびに
+  必ずOFFから開始する。
+*/
+microphoneEnabled = false;
 
-    過去にこの端末でONにして保存していれば，
-    その設定を復元する。
-  */
-  const savedMicrophoneEnabled =
-    localStorage.getItem(
-      "microphoneEnabled"
-    );
+localStorage.removeItem(
+  "microphoneEnabled"
+);
 
-  microphoneEnabled =
-    savedMicrophoneEnabled === "true";
-
-  updateMicrophoneSettingsDisplay();
+updateMicrophoneSettingsDisplay();
 }
 
 
@@ -1225,13 +1221,5 @@ function saveSettings() {
     String(
       stopButtonVisibleToggle.checked
     )
-  );
-
-  /*
-    この端末のマイク送信設定を保存する。
-  */
-  localStorage.setItem(
-    "microphoneEnabled",
-    String(microphoneEnabled)
   );
 }
