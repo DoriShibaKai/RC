@@ -177,6 +177,277 @@ function updateMicrophoneSettingsDisplay() {
 }
 
 
+/*
+  指定したストリームに，
+  使用できる映像トラックがあるか確認する。
+*/
+function hasUsableVideoTrack(stream) {
+
+  if (!stream) {
+    return false;
+  }
+
+  return stream
+    .getVideoTracks()
+    .some(
+      track =>
+        track.readyState === "live"
+    );
+}
+
+
+/*
+  video要素へ映像ストリームを設定して表示する。
+*/
+function showVideoStream(
+  targetVideoElement,
+  stream
+) {
+
+  if (
+    targetVideoElement.srcObject !==
+      stream
+  ) {
+    targetVideoElement.srcObject =
+      stream;
+  }
+
+  targetVideoElement.classList.remove(
+    "hidden"
+  );
+
+  targetVideoElement.classList.remove(
+    "emptyVideoFrame"
+  );
+
+  const playPromise =
+    targetVideoElement.play();
+
+  if (
+    playPromise &&
+    typeof playPromise.catch ===
+      "function"
+  ) {
+    playPromise.catch(
+      error => {
+        console.warn(
+          "映像を自動再生できませんでした。",
+          error
+        );
+      }
+    );
+  }
+}
+
+
+/*
+  video要素を非表示にし，
+  表示中のストリームを外す。
+*/
+function hideVideoStream(
+  targetVideoElement
+) {
+
+  targetVideoElement.pause();
+
+  targetVideoElement.srcObject = null;
+
+  targetVideoElement.classList.add(
+    "hidden"
+  );
+
+  targetVideoElement.classList.remove(
+    "emptyVideoFrame"
+  );
+}
+
+
+/*
+  自分・相手の両映像がOFFの場合に，
+  黒い基本映像を表示する。
+*/
+function showEmptyVideoFrame() {
+
+  videoElement.pause();
+
+  videoElement.srcObject = null;
+
+  videoElement.classList.remove(
+    "hidden"
+  );
+
+  videoElement.classList.add(
+    "emptyVideoFrame"
+  );
+
+  hideVideoStream(
+    pipVideoElement
+  );
+
+  pipVideoContainer.classList.add(
+    "hidden"
+  );
+
+  videoOffIndicator.classList.remove(
+    "hidden"
+  );
+}
+
+
+/*
+  小窓へ映像を表示する。
+*/
+function showPipVideoStream(stream) {
+
+  showVideoStream(
+    pipVideoElement,
+    stream
+  );
+
+  pipVideoContainer.classList.remove(
+    "hidden"
+  );
+}
+
+
+/*
+  小窓を非表示にする。
+*/
+function hidePipVideoStream() {
+
+  hideVideoStream(
+    pipVideoElement
+  );
+
+  pipVideoContainer.classList.add(
+    "hidden"
+  );
+}
+
+
+/*
+  自分・相手の映像状態から，
+  大映像と小窓の表示を一括して決定する。
+
+  この関数以外では，
+  大映像・小窓の配置を判断しない。
+*/
+function updateVideoLayout() {
+
+  /*
+    未接続または切断後は，
+    黒い映像枠自体を表示しない。
+  */
+  if (!videoConnectionActive) {
+
+    hideVideoStream(
+      videoElement
+    );
+
+    hidePipVideoStream();
+
+    videoOffIndicator.classList.add(
+      "hidden"
+    );
+
+    return;
+  }
+
+  const localVideoAvailable =
+    localCameraEnabled &&
+    hasUsableVideoTrack(
+      localStream
+    );
+
+  const remoteVideoAvailable =
+    remoteCameraEnabled &&
+    hasUsableVideoTrack(
+      remoteVideoStream
+    );
+
+  /*
+    自分・相手の両映像がON。
+  */
+  if (
+    localVideoAvailable &&
+    remoteVideoAvailable
+  ) {
+
+    videoOffIndicator.classList.add(
+      "hidden"
+    );
+
+    if (preferLocalVideoAsMain) {
+
+      showVideoStream(
+        videoElement,
+        localStream
+      );
+
+      showPipVideoStream(
+        remoteVideoStream
+      );
+
+    } else {
+
+      showVideoStream(
+        videoElement,
+        remoteVideoStream
+      );
+
+      showPipVideoStream(
+        localStream
+      );
+    }
+
+    return;
+  }
+
+  /*
+    自分の映像だけがON。
+  */
+  if (localVideoAvailable) {
+
+    videoOffIndicator.classList.add(
+      "hidden"
+    );
+
+    showVideoStream(
+      videoElement,
+      localStream
+    );
+
+    hidePipVideoStream();
+
+    return;
+  }
+
+  /*
+    相手の映像だけがON。
+  */
+  if (remoteVideoAvailable) {
+
+    videoOffIndicator.classList.add(
+      "hidden"
+    );
+
+    showVideoStream(
+      videoElement,
+      remoteVideoStream
+    );
+
+    hidePipVideoStream();
+
+    return;
+  }
+
+  /*
+    自分・相手の両映像がOFF。
+  */
+  showEmptyVideoFrame();
+}
+
+
 function setControlsConnected() {
   sendButton.disabled = true;
   viewButton.disabled = true;
