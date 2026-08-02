@@ -479,7 +479,7 @@ input:disabled {
   z-index: 25;
 
   width: min(28%, 260px);
-  min-width: 130px;
+  
   aspect-ratio: 16 / 9;
 
   overflow: hidden;
@@ -500,6 +500,13 @@ input:disabled {
   touch-action: none;
 
   cursor: grab;
+
+    /*
+    小窓の大きさ変更に備え，
+    上限・下限を設定する。
+  */
+  min-width: 10%;
+  max-width: min(40%, 420px);
 }
 
 .pipVideoContainer:active {
@@ -519,6 +526,47 @@ input:disabled {
 
   pointer-events: none;
 }
+
+
+/*
+  小窓右下のサイズ変更ハンドル
+*/
+.pipResizeHandle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  z-index: 30;
+
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.58);
+
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: nwse-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+/*
+  スマートフォンでは，小窓を小さくしすぎない。
+*/
+@media (max-width: 700px) {
+  .pipVideoContainer {
+    min-width: 20%;
+  }
+}
+
+
 
 /*
   自分・相手の両方が映像OFFのときに，

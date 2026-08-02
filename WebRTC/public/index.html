@@ -524,16 +524,24 @@
     後でドラッグ移動できるようにする。
   -->
   <div
-    id="pipVideoContainer"
-    class="pipVideoContainer hidden"
+  id="pipVideoContainer"
+  class="pipVideoContainer hidden"
+>
+  <video
+    id="pipVideo"
+    autoplay
+    playsinline
+    muted
+  ></video>
+
+  <span
+    id="pipResizeHandle"
+    class="pipResizeHandle"
+    aria-hidden="true"
   >
-    <video
-      id="pipVideo"
-      autoplay
-      playsinline
-      muted
-    ></video>
-  </div>
+    ↘
+  </span>
+</div>
 
   <!--
     自分・相手の両映像がOFFのときだけ表示する。

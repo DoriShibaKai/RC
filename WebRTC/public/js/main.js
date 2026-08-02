@@ -569,8 +569,117 @@ driveStopButton.addEventListener(
 // ======================================
 
 const PIP_POSITION_STORAGE_KEY =
-  "pipVideoPositionV1";
+  "pipVideoPositionV2";
 
+  /*
+  小窓サイズの保存名。
+*/
+const PIP_SIZE_STORAGE_KEY =
+  "pipVideoSizeV1";
+
+
+/*
+  PCでは最小10％，
+  スマートフォンでは最小20％にする。
+*/
+function getPipMinimumWidthRatio() {
+
+  return window.matchMedia(
+    "(max-width: 700px)"
+  ).matches
+    ? 0.20
+    : 0.10;
+}
+
+
+function clampPipWidthRatio(value) {
+
+  return Math.min(
+    0.40,
+    Math.max(
+      getPipMinimumWidthRatio(),
+      value
+    )
+  );
+}
+
+
+/*
+  保存されている割合から，
+  小窓の大きさを現在の映像枠へ反映する。
+*/
+function applyPipVideoSize() {
+
+  const wrapperRect =
+    videoWrapper.getBoundingClientRect();
+
+  if (wrapperRect.width <= 0) {
+    return;
+  }
+
+  /*
+    最大420pxを超えないようにする。
+  */
+  const widthPx =
+    Math.min(
+      wrapperRect.width *
+        clampPipWidthRatio(
+          pipVideoWidthRatio
+        ),
+      420
+    );
+
+  pipVideoContainer.style.width =
+    `${widthPx}px`;
+
+  pipVideoContainer.style.height =
+    "auto";
+
+  /*
+    サイズ変更後に画面外へ出ないよう，
+    保存位置を再計算する。
+  */
+  requestAnimationFrame(
+    applyPipVideoPosition
+  );
+}
+
+
+/*
+  小窓サイズをブラウザへ保存する。
+*/
+function savePipVideoSize() {
+
+  localStorage.setItem(
+    PIP_SIZE_STORAGE_KEY,
+    String(pipVideoWidthRatio)
+  );
+}
+
+
+/*
+  保存済みの小窓サイズを読み込む。
+*/
+function loadPipVideoSize() {
+
+  const saved =
+    Number(
+      localStorage.getItem(
+        PIP_SIZE_STORAGE_KEY
+      )
+    );
+
+  if (Number.isFinite(saved) &&
+      saved > 0) {
+
+    pipVideoWidthRatio =
+      clampPipWidthRatio(saved);
+  }
+
+  requestAnimationFrame(
+    applyPipVideoSize
+  );
+}
 
 /*
   数値を0～1へ収める。
@@ -724,6 +833,157 @@ function loadPipVideoPosition() {
   );
 }
 
+/*
+  小窓右下のハンドルを押したとき，
+  サイズ変更を開始する。
+*/
+pipResizeHandle.addEventListener(
+  "pointerdown",
+  event => {
+
+    if (
+      pipVideoContainer.classList.contains(
+        "hidden"
+      )
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    /*
+      小窓の移動操作とは同時に行わない。
+    */
+    pipDragActive = false;
+    pipDragPointerId = null;
+
+    pipResizeActive = true;
+    pipResizePointerId =
+      event.pointerId;
+
+    pipResizeStartClientX =
+      event.clientX;
+
+    pipResizeStartWidth =
+      pipVideoContainer
+        .getBoundingClientRect()
+        .width;
+
+    try {
+
+      pipResizeHandle.setPointerCapture(
+        event.pointerId
+      );
+
+    } catch (error) {
+
+      console.log(
+        "小窓サイズ変更のPointer Captureを" +
+        "設定できませんでした。",
+        error
+      );
+    }
+  }
+);
+
+/*
+  指またはマウスの移動に合わせて，
+  小窓の大きさを変更する。
+*/
+window.addEventListener(
+  "pointermove",
+  event => {
+
+    if (
+      !pipResizeActive ||
+      pipResizePointerId !==
+        event.pointerId
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const wrapperRect =
+      videoWrapper.getBoundingClientRect();
+
+    if (wrapperRect.width <= 0) {
+      return;
+    }
+
+    const deltaX =
+      event.clientX -
+      pipResizeStartClientX;
+
+    const requestedWidthPx =
+      pipResizeStartWidth +
+      deltaX;
+
+    const minimumWidthPx =
+     wrapperRect.width *
+      getPipMinimumWidthRatio();
+
+    const maximumWidthPx =
+      Math.min(
+        wrapperRect.width * 0.40,
+        420
+      );
+
+    const newWidthPx =
+      Math.min(
+        maximumWidthPx,
+        Math.max(
+          minimumWidthPx,
+          requestedWidthPx
+        )
+      );
+
+    pipVideoWidthRatio =
+      clampPipWidthRatio(
+        newWidthPx /
+        wrapperRect.width
+      );
+
+    applyPipVideoSize();
+  },
+  {
+    passive: false
+  }
+);
+
+
+/*
+  小窓のサイズ変更を終了し，
+  最後の大きさを保存する。
+*/
+function finishPipResize(event) {
+
+  if (
+    !pipResizeActive ||
+    pipResizePointerId !==
+      event.pointerId
+  ) {
+    return;
+  }
+
+  pipResizeActive = false;
+  pipResizePointerId = null;
+
+  savePipVideoSize();
+  savePipVideoPosition();
+}
+
+
+window.addEventListener(
+  "pointerup",
+  finishPipResize
+);
+
+window.addEventListener(
+  "pointercancel",
+  finishPipResize
+);
 
 /*
   小窓を押した時点から，
@@ -740,6 +1000,13 @@ pipVideoContainer.addEventListener(
     ) {
       return;
     }
+    if (
+  event.target.closest(
+    "#pipResizeHandle"
+  )
+) {
+  return;
+}
 
     event.preventDefault();
     event.stopPropagation();
@@ -955,6 +1222,7 @@ if (window.ResizeObserver) {
   new ResizeObserver(
     () => {
       scheduleStopButtonGeometryApply();
+      applyPipVideoSize();
       applyPipVideoPosition();
     }
   );
@@ -1690,41 +1958,141 @@ if (
 );
 
 // ======================================
-// 背景テーマ切り替え
+// 背景テーマ切り替え・保存
 // ======================================
 
+const THEME_MODE_STORAGE_KEY =
+  "themeModeLight";
+
+
+/*
+  現在のテーマ設定を画面へ反映する。
+*/
+function applyThemeMode() {
+
+  document.body.classList.toggle(
+    "lightTheme",
+    themeModeToggle.checked
+  );
+
+  const themeToggleText =
+    document.querySelector(
+      ".themeToggleText"
+    );
+
+  if (
+    themeToggleText instanceof
+      HTMLElement
+  ) {
+
+    if (themeModeToggle.checked) {
+      themeToggleText.textContent =
+        "ライト";
+    } else {
+      themeToggleText.textContent =
+        "ダーク";
+    }
+  }
+}
+
+
+/*
+  保存されている画面テーマを読み込む。
+*/
+function loadThemeMode() {
+
+  const savedTheme =
+    localStorage.getItem(
+      THEME_MODE_STORAGE_KEY
+    );
+
+  if (savedTheme !== null) {
+
+    themeModeToggle.checked =
+      savedTheme === "true";
+  }
+
+  applyThemeMode();
+}
+
+
+/*
+  テーマを変更したら保存する。
+*/
 themeModeToggle.addEventListener(
   "change",
   () => {
-    document.body.classList.toggle(
-      "lightTheme",
-      themeModeToggle.checked
+
+    applyThemeMode();
+
+    localStorage.setItem(
+      THEME_MODE_STORAGE_KEY,
+      String(
+        themeModeToggle.checked
+      )
     );
-
-    const themeToggleText =
-      document.querySelector(".themeToggleText");
-
-    if (themeModeToggle.checked) {
-      themeToggleText.textContent = "ライト";
-    } else {
-      themeToggleText.textContent = "ダーク";
-    }
   }
 );
 
-// ----------
-// 起動時に読み込み
-// ----------
 
-loadSettings();
-loadStopButtonGeometry();
-loadPipVideoPosition();
+// ======================================
+// 走行速度の保存
+// ======================================
 
+const DRIVE_SPEED_STORAGE_KEY =
+  "driveSpeedScale";
+
+
+/*
+  保存されている走行速度を読み込む。
+*/
+function loadDriveSpeed() {
+
+  const savedSpeed =
+    localStorage.getItem(
+      DRIVE_SPEED_STORAGE_KEY
+    );
+
+  if (savedSpeed !== null) {
+
+    const optionExists =
+      Array.from(
+        driveSpeedSelect.options
+      ).some(
+        option =>
+          option.value === savedSpeed
+      );
+
+    if (optionExists) {
+
+      driveSpeedSelect.value =
+        savedSpeed;
+    }
+  }
+
+  driveSpeedScale =
+    Number(
+      driveSpeedSelect.value
+    ) || 0.25;
+}
+
+
+/*
+  走行速度を変更したら保存する。
+*/
 driveSpeedSelect.addEventListener(
   "change",
   () => {
+
     driveSpeedScale =
-      Number(driveSpeedSelect.value) || 0.25;
+      Number(
+        driveSpeedSelect.value
+      ) || 0.25;
+
+    localStorage.setItem(
+      DRIVE_SPEED_STORAGE_KEY,
+      driveSpeedSelect.value
+    );
 
     console.log(
       "走行速度を変更:",
@@ -1736,3 +2104,15 @@ driveSpeedSelect.addEventListener(
     );
   }
 );
+
+
+// ----------
+// 起動時に読み込み
+// ----------
+
+loadSettings();
+loadStopButtonGeometry();
+loadPipVideoSize();
+loadPipVideoPosition();
+loadThemeMode();
+loadDriveSpeed();

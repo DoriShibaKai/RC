@@ -33,6 +33,14 @@ const pipVideoContainer =
     "pipVideoContainer"
   );
 
+  /*
+  小窓右下のサイズ変更ハンドル。
+*/
+const pipResizeHandle =
+  document.getElementById(
+    "pipResizeHandle"
+  );
+
 /*
   両方の映像がOFFのときに，
   左下へ「映像OFF」と表示する。
@@ -256,15 +264,39 @@ let videoConnectionActive = false;
 let preferLocalVideoAsMain = false;
 
 /*
-  小窓の保存位置。
-
-  0～1の比率で保持し，
-  PC・iPhone・全画面で再計算できるようにする。
+  小窓の初期位置。
+  PC・スマートフォンとも左上にする。
 */
 let pipVideoPosition = {
-  xRatio: 0.78,
-  yRatio: 0.06
+  xRatio: 0.03,
+  yRatio: 0.05
 };
+/*
+  小窓の横幅。
+
+  基本映像枠の横幅に対する割合で保持する。
+  0.20～0.40の範囲で使用する。
+*/
+let pipVideoWidthRatio = 0.28;
+
+
+/*
+  小窓のサイズ変更中かどうか。
+*/
+let pipResizeActive = false;
+
+
+/*
+  サイズ変更に使用している指・マウスのID。
+*/
+let pipResizePointerId = null;
+
+
+/*
+  サイズ変更を始めた時点の情報。
+*/
+let pipResizeStartClientX = 0;
+let pipResizeStartWidth = 0;
 
 /*
   小窓をドラッグしている状態。
