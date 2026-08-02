@@ -500,19 +500,54 @@
 
       <!-- 映像・ジョイスティック・STOPボタン -->
 
-      <div id="videoWrapper">
+    <div id="videoWrapper">
 
-        <video
-          id="video"
-          autoplay
-          playsinline
-          muted
-          class="hidden"
-        ></video>
+  <!--
+    基本映像（大きい映像）。
 
-        <div id="joystickArea">
-          <div id="joystickKnob"></div>
-        </div>
+    現段階では従来のvideoElementとして使用する。
+    後で，自分映像・相手映像のどちらを
+    表示するか切り替える。
+  -->
+  <video
+    id="video"
+    autoplay
+    playsinline
+    muted
+    class="hidden mainVideo"
+  ></video>
+
+  <!--
+    小窓映像。
+
+    双方向映像を実装するまでは非表示。
+    後でドラッグ移動できるようにする。
+  -->
+  <div
+    id="pipVideoContainer"
+    class="pipVideoContainer hidden"
+  >
+    <video
+      id="pipVideo"
+      autoplay
+      playsinline
+      muted
+    ></video>
+  </div>
+
+  <!--
+    自分・相手の両映像がOFFのときだけ表示する。
+  -->
+  <div
+    id="videoOffIndicator"
+    class="videoOffIndicator hidden"
+  >
+    映像OFF
+  </div>
+
+  <div id="joystickArea">
+    <div id="joystickKnob"></div>
+  </div>
 
         <div
           id="fullscreenHoldIndicator"
