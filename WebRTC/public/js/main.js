@@ -2094,6 +2094,12 @@ driveSpeedSelect.addEventListener(
       driveSpeedSelect.value
     );
 
+      /*
+      変更した走行速度を，
+      接続中の相手側にも反映する。
+    */
+    sendDriveSpeedState();
+
     console.log(
       "走行速度を変更:",
       driveSpeedSelect.options[

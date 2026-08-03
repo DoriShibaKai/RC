@@ -157,9 +157,17 @@ function configureDriveChannel(
       onConnected();
     }
 
+    /*
+     接続した相手へ，
+     現在の共通走行速度を通知する。
+    */
+    sendDriveSpeedState();
+
     if (settingsPanel.open) {
       stopDrivingForSettings();
     }
+
+    
   };
 
   if (
@@ -291,6 +299,24 @@ function sendSettingsState(active) {
   });
 }
 
+/*
+  ==========================================
+  走行速度を相手へ送信する
+  ==========================================
+
+  走行速度は部屋全体の共有設定とし，
+  最後に変更された値を相手側にも反映する。
+*/
+function sendDriveSpeedState() {
+
+  driveSequence++;
+
+  return sendDriveChannelPayload({
+    type: "drive-speed-state",
+    speed: driveSpeedScale,
+    sequence: driveSequence
+  });
+}
 
 /*
   ==========================================
@@ -465,6 +491,85 @@ function handleDriveChannelMessage(event) {
 
     return;
   }
+
+  /*
+  ========================================
+  相手が変更した走行速度
+  ========================================
+*/
+if (
+  command.type ===
+  "drive-speed-state"
+) {
+
+  const receivedSpeed =
+    Number(command.speed);
+
+  /*
+    現在用意している速度だけを受け付ける。
+  */
+  const allowedSpeeds = [
+    0.25,
+    1.0
+  ];
+
+  if (
+    !Number.isFinite(receivedSpeed) ||
+    !allowedSpeeds.includes(
+      receivedSpeed
+    )
+  ) {
+
+    console.warn(
+      "不正な走行速度を受信しました。",
+      command
+    );
+
+    return;
+  }
+
+  /*
+    実際に使用する速度を更新する。
+  */
+  driveSpeedScale =
+    receivedSpeed;
+
+  /*
+    自分側の詳細設定表示も，
+    相手が最後に変更した速度へ合わせる。
+  */
+ const matchingSpeedOption =
+  Array.from(
+    driveSpeedSelect.options
+  ).find(
+    option =>
+      Number(option.value) ===
+      receivedSpeed
+  );
+
+if (matchingSpeedOption) {
+  driveSpeedSelect.value =
+    matchingSpeedOption.value;
+}
+
+  /*
+    この端末を次回開いたときにも，
+    共通速度を表示できるよう保存する。
+  */
+  localStorage.setItem(
+  "driveSpeedScale",
+  matchingSpeedOption
+    ? matchingSpeedOption.value
+    : String(receivedSpeed)
+);
+
+  console.log(
+    "相手の走行速度を反映:",
+    receivedSpeed
+  );
+
+  return;
+}
 
   /*
     ========================================
